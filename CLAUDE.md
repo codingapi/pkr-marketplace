@@ -32,7 +32,7 @@ pkr-marketplace/
 在目标项目中安装插件后，通过以下方式验证：
 
 1. `/pkr-create` — 确认创建 docs/capabilities/、docs/conventions/、docs/agents/ 目录，CLAUDE.md 注入
-2. `/pkr-export <module>` — 确认导出到 docs/agents/{module}/，source 转换正确，manifest.json 生成
+2. `/pkr-export <module>` — 确认导出到 docs/agents/capabilities/{module}/ 和 docs/agents/conventions/{module}/，source 转换正确
 3. `/pkr-init` — 确认自动跳过已有文档，可补充发现同模块下的新文档
 4. `/pkr-sync` — 确认全量同步能检测代码变更（递归扫描子目录）
 5. `/pkr-update <module>/<name>` — 确认模块文档更新正常（如 `myapp/workflow-engine`、`springboot/cache`）

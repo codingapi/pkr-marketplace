@@ -37,6 +37,7 @@ YAML Front Matter 字段：
 | `status` | `计划中` / `已实现` / `已废弃` |
 | `scope` | `前端` / `后端` / `全栈` |
 | `source` | `项目自有` / `框架:{框架名}` / `计划` |
+| `import` | 导入坐标（Maven GAV / npm 包路径 / 模块路径等） |
 
 **条件字段（根据 source 类型选填）：**
 
@@ -160,7 +161,15 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
 1. Read 对应模板文件
 2. 分析源码/依赖/规划文档，提取信息
 3. 按模板填充内容
-4. **根据 source 类型写入条件字段**：
+4. **记录 `import` 导入坐标**（所有 source 类型都需要）：
+   - **Java**：从 `pom.xml` / `build.gradle` 读取 Maven GAV（`groupId:artifactId`）
+   - **Node/TS**：从 `package.json` 读取包名（`@scope/package` 或 `package`）
+   - **Python**：从 `pyproject.toml` / `setup.py` 读取包名
+   - **Go**：从 `go.mod` 读取模块路径
+   - **Rust**：从 `Cargo.toml` 读取 crate 名
+   - **项目自有（单模块）**：使用项目自身坐标
+   - **项目自有（多模块）**：使用能力所在模块的坐标
+5. **根据 source 类型写入条件字段**：
    - **source=项目自有** → 记录 `symbols` 和 `content_hash`
      - 通过 CodeGraph 或 grep 定位 symbols 所在的源文件
      - 记录 symbols 列表（类名、函数名等）
@@ -170,9 +179,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
      ```
      脚本内部自动按路径字典序排序，无需手动排序参数
    - **source=框架:xxx** → 从依赖声明文件读取并记录 `framework_version`
-   - **source=计划** → 无需额外字段
-5. Write 到 `docs/capabilities/` 或 `docs/conventions/`
-6. 文件名 = `name` 字段值（英文短横线格式）+ `.md`
+   - **source=计划** → 无需额外条件字段
+6. Write 到 `docs/capabilities/` 或 `docs/conventions/`
+7. 文件名 = `name` 字段值（英文短横线格式）+ `.md`
 
 ---
 

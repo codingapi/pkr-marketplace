@@ -4,6 +4,7 @@ description: 通用工作流引擎，支持流程定义、节点编排、状态�
 status: 已实现
 scope: 后端
 source: 项目自有
+import: "com.example:workflow-engine"
 symbols:
   - WorkflowEngine
   - WorkflowNode

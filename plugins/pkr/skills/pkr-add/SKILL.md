@@ -37,6 +37,7 @@ YAML Front Matter 字段：
 | `status` | `计划中` / `已实现` / `已废弃` |
 | `scope` | `前端` / `后端` / `全栈` |
 | `source` | `项目自有` / `框架:{框架名}` / `计划` |
+| `import` | 导入坐标（Maven GAV / npm 包路径 / 模块路径等） |
 
 **条件字段（根据 source 类型选填）：**
 
@@ -138,6 +139,12 @@ YAML Front Matter 字段：
      - 公开 API（方法签名、参数、返回值）
      - 配置方式（构造函数、注解、配置文件）
      - 依赖关系
+   - 记录 `import` 导入坐标：
+     - **Java**：从 `pom.xml` / `build.gradle` 读取能力所在模块的 GAV（`groupId:artifactId`）
+     - **Node/TS**：从 `package.json` 读取包名
+     - **Python**：从 `pyproject.toml` / `setup.py` 读取包名
+     - **Go**：从 `go.mod` 读取模块路径
+     - **Rust**：从 `Cargo.toml` 读取 crate 名
    - 记录 `symbols`（关联的代码符号列表：类名、函数名等）
    - 记录 `content_hash`（将所有关联文件按路径排序拼接，归一化行尾后计算 SHA-256）：
      ```bash
@@ -148,6 +155,7 @@ YAML Front Matter 字段：
    **source=框架:xxx：**
    - 从依赖声明文件（pom.xml / package.json 等）读取版本号
    - 根据 description 和框架文档，整理该框架提供的核心能力
+   - 记录 `import`：框架的依赖坐标（如 `org.springframework:spring-context`）
    - 记录 `framework_version`
 
 4. **用 AskUserQuestion 确认信息**：
@@ -206,6 +214,7 @@ YAML Front Matter 字段：
    - `name`：用户提供或自动生成的名称
    - `status: 计划中`
    - `source: 计划`
+   - `import`：预期导入坐标（根据技术选型推断，如计划引入 Drools 则填 `org.drools:drools-core`）
    - 无条件字段（无 `content_hash`、`symbols`、`framework_version`）
    - "解决什么问题"：基于 description 展开
    - "如何使用"：描述预期的 API 设计和使用方式（标注为"预期设计，待实现"）

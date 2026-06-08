@@ -4,6 +4,7 @@ description: {description}
 status: {计划中 | 已实现 | 已废弃}
 scope: {前端 | 后端 | 全栈}
 source: {项目自有 | 框架:{框架名} | 计划}
+import: "{导入坐标，如 Maven GAV / npm 包路径 / 模块路径}"
 # 以下字段根据 source 类型选填：
 # source=项目自有 时必填：
 # symbols:                            — 关联的代码符号列表（类名、函数名等）

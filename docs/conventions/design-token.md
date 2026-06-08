@@ -4,6 +4,7 @@ description: 前端样式必须使用 Design Token 变量，禁止硬编码颜�
 status: 已实现
 scope: 前端
 source: 项目自有
+import: "@shared/design-tokens"
 symbols:
   - tokens.css
   - theme.ts

@@ -37,6 +37,7 @@ YAML Front Matter 字段：
 | `status` | `计划中` / `已实现` / `已废弃` |
 | `scope` | `前端` / `后端` / `全栈` |
 | `source` | `项目自有` / `框架:{框架名}` / `计划` |
+| `import` | 导入坐标（Maven GAV / npm 包路径 / 模块路径等） |
 
 **条件字段（根据 source 类型选填）：**
 

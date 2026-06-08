@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-PKR 初始化脚本 — 在目标项目中设置 PKR 目录结构和 CLAUDE.md 集成。
+PKR Create — 创建 PKR 目录结构和 CLAUDE.md 集成。
 
 跨平台兼容（Windows / macOS / Linux）。
 
 用法:
-    python3 pkr_setup.py [project_root]
+    python3 pkr_create.py [project_root]
 
 参数:
     project_root  目标项目根目录（默认为 git 仓库根或当前目录）
 
 功能:
-    1. 创建 docs/capabilities/ 和 docs/conventions/ 目录
+    1. 创建 docs/capabilities/、docs/conventions/、docs/agents/ 目录
     2. 在 CLAUDE.md 中添加 PKR 知识查阅约束（幂等，不会重复添加）
 """
 
@@ -54,11 +54,12 @@ PKR_CONTENT = """\
 
 | 命令 | 用途 |
 |------|------|
-| `/pkr-init` | 首次扫描项目，发现候选能力和规范 |
+| `/pkr-init` | 扫描项目，发现候选能力和规范（自动跳过已有文档） |
 | `/pkr-sync` | 全量同步，对比代码变更 |
-| `/pkr-update <name> [desc]` | 单项更新，可带描述指导更新 |
-| `/pkr-add [name] <desc>` | 从代码/框架扫描注册（名称可省略） |
-| `/pkr-add plan [name] <desc>` | 注册计划中的能力（名称可省略） |
+| `/pkr-update <module>/<name> [desc]` | 单项更新，可带描述指导更新 |
+| `/pkr-add <module>/<name> <desc>` | 从代码/框架扫描注册 |
+| `/pkr-add plan <module>/<name> <desc>` | 注册计划中的能力 |
+| `/pkr-export <module> ...` | 导出模块文档供其他项目使用 |
 <!-- PKR-END -->
 """
 
@@ -84,7 +85,7 @@ def setup_dirs(project_root):
     """创建 docs 目录结构。"""
     print("📁 创建目录结构...")
 
-    for subdir in ["docs/capabilities", "docs/conventions"]:
+    for subdir in ["docs/capabilities", "docs/conventions", "docs/agents"]:
         dirpath = project_root / subdir
         dirpath.mkdir(parents=True, exist_ok=True)
         print(f"   ✅ {subdir}/")
@@ -125,7 +126,7 @@ def update_claude_md(project_root):
 def main():
     project_root = get_project_root()
 
-    print("🔧 PKR 初始化")
+    print("🔧 PKR 创建项目结构")
     print(f"   项目目录: {project_root}")
     print()
 
@@ -135,11 +136,11 @@ def main():
     update_claude_md(project_root)
     print()
 
-    print("✅ PKR 初始化完成！")
+    print("✅ PKR 项目结构创建完成！")
     print()
     print("下一步：")
-    print("  1. 执行 /pkr-init 首次扫描项目")
-    print("  2. 确认候选能力和规范")
+    print("  1. 如有外部模块文档，将其复制到 docs/capabilities/{module}/ 和 docs/conventions/{module}/")
+    print("  2. 执行 /pkr-init 扫描项目能力和规范")
     print("  3. 开始知识驱动的编码流程")
 
 

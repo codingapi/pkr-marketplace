@@ -3,15 +3,16 @@ name: pkr-init
 description: >
   This skill should be used when the user asks to "scan project knowledge",
   "build PKR docs", "discover capabilities", "discover conventions",
-  "pkr init", "initialize PKR", or mentions first-time project knowledge setup.
+  "pkr init", "initialize PKR knowledge", or mentions scanning project for capabilities and conventions.
 argument-hint: ""
 allowed-tools: [Read, Write, Edit, Bash, AskUserQuestion, Glob, Grep, mcp__codegraph__*]
 disable-model-invocation: true
 ---
 
-# PKR Init — 首次构建项目知识库
+# PKR Init — 扫描项目能力和规范
 
-扫描项目代码、依赖和规划文档，发现候选的 Capability（能力）和 Convention（规范），由用户确认后生成 PKR 文档。
+扫描项目代码、依赖和规划文档，发现候选的 Capability（能力）和 Convention（规范）。
+**自动跳过已存在的文档**（包括从外部导入的），只发现新的候选。
 
 ## 文档存储位置
 
@@ -64,21 +65,21 @@ YAML Front Matter 字段：
 
 如果本地已安装 CodeGraph MCP，**优先使用** CodeGraph 进行代码分析（`codegraph_search` / `codegraph_explore` / `codegraph_callers`）；未安装时降级到 Bash + Grep/Glob。
 
-## 项目初始化
+## 前置条件
 
-首次使用前，需执行初始化脚本配置目标项目：
-
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
-```
-
-该脚本会：
-1. 创建 `docs/capabilities/` 和 `docs/conventions/` 目录
-2. 在项目的 `CLAUDE.md` 中添加 PKR 知识查阅约束（幂等，不会重复添加）
+首次使用前，需先执行 `/pkr-create` 创建目录结构和 CLAUDE.md 集成。
 
 ---
 
 ## 工作流程
+
+### 阶段 0：加载已有文档（跳过已注册的）
+
+1. 递归扫描 `docs/capabilities/` 和 `docs/conventions/` 下所有 `.md` 文件（排除各级 index.md）
+2. 解析 frontmatter，收集所有已注册文档的 `name` 集合（如 `mylib/cache`、`springboot/ioc`）
+3. 按模块分组，统计每个模块已有文档数
+4. 后续扫描阶段中，`name` 已存在于集合中的候选 → **自动跳过**，不再展示给用户
+5. 同模块下新发现的候选 → 正常作为候选展示，可补充到已有模块中
 
 ### 阶段 1：识别项目技术栈
 
@@ -139,18 +140,21 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
 用 AskUserQuestion 分组展示候选清单：
 
 ```
-📦 项目自有能力（N 个候选）：
-  1. WorkflowEngine — 工作流引擎（引用 12 次）
-  2. EventBus — 事件总线（引用 8 次）
+📦 已有文档（自动跳过，不再分析）：
+  ✅ mylib — 3 篇（cache, retry, event-bus）
+  ✅ springboot — 2 篇（data, cache）
+
+📦 项目自有能力（N 个新候选）：
+  1. EventBus — 事件总线（引用 8 次）→ mylib/event-bus（补充到已有模块）
+  2. RetryEngine — 重试引擎（引用 5 次）→ mylib/retry-engine
   ...
 
 📚 三方框架能力（N 个候选）：
-  1. spring-context → Spring IoC 容器
-  2. spring-boot-starter-cache → Spring Cache 声明式缓存
+  1. spring-data-jpa → Spring Data JPA → springboot/data-jpa
   ...
 
 🗓️ 计划中能力（N 个候选）：
-  1. Rule Engine — PRD.md 中提及
+  1. Rule Engine — PRD.md 中提及 → mylib/rule-engine
   ...
 ```
 

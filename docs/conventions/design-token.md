@@ -4,6 +4,10 @@ description: 前端样式必须使用 Design Token 变量，禁止硬编码颜�
 status: 已实现
 scope: 前端
 source: 项目自有
+last_commit: b31f48c
+code_files:
+  - src/styles/tokens.css
+  - src/styles/theme.ts
 ---
 
 ## 解决什么问题

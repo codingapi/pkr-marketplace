@@ -29,6 +29,8 @@ disable-model-invocation: true
 
 YAML Front Matter 字段：
 
+**必填字段：**
+
 | 字段 | 说明 |
 |------|------|
 | `name` | 英文短横线格式名称（如 `workflow-engine`） |
@@ -36,6 +38,15 @@ YAML Front Matter 字段：
 | `status` | `计划中` / `已实现` / `已废弃` |
 | `scope` | `前端` / `后端` / `全栈` |
 | `source` | `项目自有` / `框架:{框架名}` / `计划` |
+
+**条件字段（根据 source 类型选填）：**
+
+| source 类型 | 额外字段 | 用途 |
+|------------|---------|------|
+| `项目自有` | `last_commit` | 关联源码的最后一次 git commit hash（用于 sync 变更检测） |
+| `项目自有` | `code_files` | 关联的源码文件列表（用于 sync 时定位 git 变更） |
+| `框架:xxx` | `framework_version` | 依赖版本号（用于 sync 时对比依赖版本是否变化） |
+| `计划` | 无额外字段 | sync 时忽略计划中的文档 |
 
 正文三个必含章节：**解决什么问题** / **如何使用** / **使用实例**
 
@@ -160,8 +171,15 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
 1. Read 对应模板文件
 2. 分析源码/依赖/规划文档，提取信息
 3. 按模板填充内容
-4. Write 到 `docs/capabilities/` 或 `docs/conventions/`
-5. 文件名 = `name` 字段值（英文短横线格式）+ `.md`
+4. **根据 source 类型写入条件字段**：
+   - **source=项目自有** → 记录 `last_commit` 和 `code_files`
+     ```bash
+     git log -1 --format=%h -- <关联的源码文件>
+     ```
+   - **source=框架:xxx** → 从依赖声明文件读取并记录 `framework_version`
+   - **source=计划** → 无需额外字段
+5. Write 到 `docs/capabilities/` 或 `docs/conventions/`
+6. 文件名 = `name` 字段值（英文短横线格式）+ `.md`
 
 ---
 
@@ -177,22 +195,34 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
 
 执行与模式 A 相同的阶段 1-4 扫描。
 
-### 步骤 3：对比差异
+### 步骤 3：对比差异（智能变更检测）
 
-对每篇现有文档：
+对每篇现有文档，根据 `source` 采用不同的检测策略：
 
 **source=项目自有：**
 - 在代码中查找对应的类/文件是否仍存在
-- 若存在：检查 API 签名是否变化
 - 若不存在：标记为 `已废弃`
+- 若存在：**使用 Git commit hash 检测变更**
+  ```bash
+  # 获取关联源码文件的最新 commit hash
+  git log -1 --format=%h -- <code_files>
+  ```
+  - 对比 frontmatter 中的 `last_commit` 字段
+  - 若 hash 相同 → **跳过**（代码未变化）
+  - 若 hash 不同 → 重新分析代码并更新文档
+  - 更新后写入新的 `last_commit` 值
 
 **source=框架:**
 - 检查依赖是否仍存在
 - 若不存在：标记为 `已废弃`
+- 若存在：**对比依赖版本号**
+  - 从依赖声明文件（pom.xml/package.json 等）读取当前版本
+  - 对比 frontmatter 中的 `framework_version` 字段
+  - 若版本相同 → **跳过**（依赖未变化）
+  - 若版本不同 → 更新文档并写入新版本号
 
 **source=计划：**
-- 检查代码中是否已实现
-- 若已实现：提示升级为 `已实现`
+- **完全忽略**（计划中的能力不需要 sync）
 
 ### 步骤 4：幂等合并更新
 

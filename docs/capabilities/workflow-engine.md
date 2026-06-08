@@ -4,6 +4,11 @@ description: 通用工作流引擎，支持流程定义、节点编排、状态�
 status: 已实现
 scope: 后端
 source: 项目自有
+last_commit: b31f48c
+code_files:
+  - src/main/java/com/example/workflow/WorkflowEngine.java
+  - src/main/java/com/example/workflow/WorkflowNode.java
+  - src/main/java/com/example/workflow/WorkflowInstance.java
 ---
 
 ## 解决什么问题

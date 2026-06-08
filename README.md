@@ -33,7 +33,7 @@
 执行插件提供的初始化脚本，自动创建目录结构并配置 CLAUDE.md：
 
 ```bash
-bash "$CLAUDE_PLUGIN_ROOT/scripts/pkr-setup.sh"
+python3 "$CLAUDE_PLUGIN_ROOT/scripts/pkr_setup.py"
 ```
 
 该脚本会：

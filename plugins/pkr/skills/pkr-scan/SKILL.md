@@ -54,7 +54,7 @@ YAML Front Matter 字段：
 首次使用前，需执行初始化脚本配置目标项目：
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/pkr-setup.sh"
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
 ```
 
 该脚本会：

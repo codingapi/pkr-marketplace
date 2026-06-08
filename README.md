@@ -19,57 +19,9 @@
 - Git 已初始化（`git init`）
 - Python 3（用于索引重建脚本）
 
-## 推荐配置：CodeGraph MCP
+## 推荐配置：CodeGraph
 
-**强烈推荐**安装 CodeGraph MCP，可显著提升代码分析的速度和准确性。
-
-### 为什么需要 CodeGraph？
-
-CodeGraph 是一个基于 SQLite 的代码知识图谱 MCP 服务，提供：
-
-- ⚡ **毫秒级查询**：基于索引的符号搜索，速度 < 1ms
-- 🔗 **完整关系图谱**：调用链、继承、实现、引用关系
-- 📊 **引用分析**：快速统计符号被引用的次数
-- 💾 **减少 context 消耗**：避免重复解析代码
-
-### 性能对比
-
-| 场景 | 传统 Bash + Grep | CodeGraph MCP |
-|------|------------------|---------------|
-| 搜索符号定义 | 2-5s | < 1ms |
-| 分析引用关系 | 需要多次 grep | 单次 API 调用 |
-| 理解调用链 | 手动追踪 | 自动提供 |
-
-### 安装 CodeGraph MCP
-
-1. **安装 MCP 服务**：
-   ```bash
-   # 具体安装方式请参考 CodeGraph 官方文档
-   # 通常通过 claude mcp add 命令配置
-   ```
-
-2. **配置 Claude Code**：
-   在项目的 `.claude/settings.json` 或全局 `~/.claude/settings.json` 中添加：
-   ```json
-   {
-     "mcpServers": {
-       "codegraph": {
-         "command": "codegraph-mcp",
-         "args": ["--project", "."]
-       }
-     }
-   }
-   ```
-
-3. **验证安装**：
-   在 Claude Code 中执行：
-   ```
-   请使用 codegraph_status 检查索引状态
-   ```
-
-### 降级方案
-
-如果未安装 CodeGraph，PKR 会自动降级使用 Bash + Grep/Glob 进行代码分析，功能不受影响，但分析速度较慢。
+**强烈推荐**安装 [CodeGraph](https://github.com/colbymchenry/codegraph)，可显著提升代码分析的速度和准确性。
 
 ## 快速开始
 

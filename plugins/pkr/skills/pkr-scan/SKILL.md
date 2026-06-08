@@ -49,6 +49,43 @@ YAML Front Matter 字段：
   ```
 - **禁止 Read+stdin**：不需要先 Read 脚本源码再管道执行，直接 python3 调用即可
 
+## 代码分析工具选择
+
+扫描代码时，按以下优先级选择工具：
+
+### 优先级 1：CodeGraph MCP（如果已安装）
+
+如果 CodeGraph MCP 服务可用，**优先使用** CodeGraph 进行代码分析：
+
+1. **检测可用性**：尝试调用 `codegraph_status` 检查索引状态
+2. **符号搜索**：使用 `codegraph_search` 按名称模式搜索类/函数
+   ```
+   例：搜索包含 "Engine" 的符号
+   ```
+3. **代码理解**：使用 `codegraph_explore` 理解代码结构、调用关系
+4. **引用分析**：使用 `codegraph_callers` / `codegraph_callees` 分析引用次数
+5. **影响分析**：使用 `codegraph_impact` 评估修改影响范围
+
+**优势**：
+- 基于 SQLite 知识图谱，查询速度 < 1ms
+- 提供完整的符号关系（调用链、继承、实现）
+- 避免重复解析，减少 context 消耗
+
+### 优先级 2：Bash + Grep/Glob（降级方案）
+
+如果 CodeGraph MCP 不可用，使用传统工具：
+
+- `find` / `glob` 搜索文件
+- `grep` 搜索代码模式
+- `git grep` 搜索 Git 仓库中的文件
+
+### 混合策略
+
+某些场景需要混合使用：
+- **文件结构扫描**：CodeGraph + `find`（检查特定文件是否存在）
+- **依赖声明**：CodeGraph 不处理配置文件，仍需 Read `pom.xml` / `package.json`
+- **规划文档**：仍需 Read 扫描 `PRD.md` / `ROADMAP.md`
+
 ## 项目初始化
 
 首次使用前，需执行初始化脚本配置目标项目：
@@ -85,7 +122,25 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
 
 ### 阶段 2：扫描项目自有能力（Capability）
 
-按命名模式搜索候选类/接口（排除测试目录）：
+按命名模式搜索候选类/接口（排除测试目录）。
+
+**工具选择**：优先使用 CodeGraph MCP（如可用），否则降级到 Bash + Grep。
+
+#### 使用 CodeGraph（推荐）
+
+```python
+# 1. 按名称模式搜索符号
+codegraph_search("Engine", kind="class")
+codegraph_search("Bus", kind="class")
+codegraph_search("Lock", kind="class")
+# ... 其他模式
+
+# 2. 对候选符号分析引用次数
+codegraph_callers("WorkflowEngine")  # 查看谁引用了它
+# 引用 ≥ 3 次的优先
+```
+
+#### 使用 Bash + Grep（降级）
 
 **Java 模式**：
 ```
@@ -105,11 +160,12 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
 *_factory, *_gateway, *_proxy, *_adapter, *_strategy
 ```
 
-筛选规则：
+#### 筛选规则（通用）
+
 1. 排除业务类（Controller、Service、Repository、DAO、DTO、VO、Entity、Model）
 2. 排除测试类
 3. 优先关注：有接口+实现的类、被多处引用的工具类
-4. 对每个候选，用 Grep 检查引用次数 — 引用 ≥ 3 次优先
+4. 对每个候选，检查引用次数 — 引用 ≥ 3 次优先
 
 ### 阶段 3：扫描项目自有规范（Convention）
 
@@ -246,8 +302,12 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
 2. **读取文档**：解析 frontmatter，获取 `source` 和 `status`
 3. **按 source 定向扫描**：
    - **source=项目自有** → 在代码中定位对应的类/文件，分析当前 API
+     - **优先 CodeGraph**：`codegraph_node("类名")` 获取完整定义，`codegraph_callers` 分析引用
+     - **降级 Bash**：`find` 定位文件 + `Read` 读取源码
    - **source=框架:xxx** → 检查依赖是否仍存在，查阅框架文档
    - **source=计划** → 检查代码中是否已实现该能力
+     - **优先 CodeGraph**：`codegraph_search("能力名")` 搜索相关符号
+     - **降级 Bash**：`grep -r "关键词" src/`
 4. **幂等合并更新**（同模式 B 步骤 4）
 5. **追加变更记录**
 

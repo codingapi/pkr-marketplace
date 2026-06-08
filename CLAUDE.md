@@ -29,11 +29,13 @@ pkr-marketplace/
 
 在目标项目中安装插件后，通过以下方式验证：
 
-1. `/pkr-init` — 确认能扫描出候选并生成文档
-2. `/pkr-sync` — 确认全量同步能检测代码变更
-3. `/pkr-update <name>` — 确认单项更新正常
-4. `/pkr-add <name> <desc>` — 确认指定名称注册正常
-5. `/pkr-add <desc>` — 确认自动生成名称注册正常
-6. `/pkr-add plan <name> <desc>` — 确认指定名称计划注册正常
-7. `/pkr-add plan <desc>` — 确认自动生成名称计划注册正常
-5. 写入 `docs/capabilities/*.md` 后确认索引自动重建
+1. `/pkr-init` — 确认能扫描出候选并生成文档（框架文档自动归入子目录）
+2. `/pkr-sync` — 确认全量同步能检测代码变更（含子目录文档）
+3. `/pkr-update <name>` — 确认单项更新正常（如 `workflow-engine`）
+4. `/pkr-update <module>/<name>` — 确认模块文档更新正常（如 `springboot/cache`）
+5. `/pkr-add <name> <desc>` — 确认指定名称注册正常
+6. `/pkr-add <module>/<name> <desc>` — 确认模块文档注册正常（如 `springboot/cache`）
+7. `/pkr-add <desc>` — 确认自动生成名称注册正常
+8. `/pkr-add plan <name> <desc>` — 确认指定名称计划注册正常
+9. `/pkr-add plan <desc>` — 确认自动生成名称计划注册正常
+10. 写入 `docs/capabilities/**/*.md` 后确认索引自动重建（含子目录）

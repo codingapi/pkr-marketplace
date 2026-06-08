@@ -15,9 +15,9 @@ disable-model-invocation: true
 
 ## 文档存储位置
 
-- Capability 文档 → `docs/capabilities/{name}.md`
+- Capability 文档 → `docs/capabilities/[{module}/]{name}.md`
 - Capability 索引 → `docs/capabilities/index.md`（由脚本自动维护）
-- Convention 文档 → `docs/conventions/{name}.md`
+- Convention 文档 → `docs/conventions/[{module}/]{name}.md`
 - Convention 索引 → `docs/conventions/index.md`（由脚本自动维护）
 
 ## 文档格式
@@ -32,12 +32,18 @@ YAML Front Matter 字段：
 
 | 字段 | 说明 |
 |------|------|
-| `name` | 英文短横线格式名称（如 `workflow-engine`） |
+| `name` | 名称，格式 `[module/]short-name`（如 `workflow-engine` 或 `springboot/cache`） |
 | `description` | 一句话描述 |
 | `status` | `计划中` / `已实现` / `已废弃` |
 | `scope` | `前端` / `后端` / `全栈` |
 | `source` | `项目自有` / `框架:{框架名}` / `计划` |
 | `import` | 导入坐标（Maven GAV / npm 包路径 / 模块路径等） |
+
+**可选字段：**
+
+| 字段 | 说明 |
+|------|------|
+| `module` | 模块名（由子目录自动推导，框架文档自动归入对应子目录） |
 
 **条件字段（根据 source 类型选填）：**
 
@@ -71,9 +77,9 @@ YAML Front Matter 字段：
 
 | 命令格式 | 模式 | 说明 |
 |----------|------|------|
-| `/pkr-add <name> <description>` | A — 代码扫描注册（指定名称） | 从代码或框架中查找能力，生成已实现文档 |
+| `/pkr-add <name> <description>` | A — 代码扫描注册（指定名称） | 名称支持 `module/name` 格式 |
 | `/pkr-add <description>` | A — 代码扫描注册（自动生成名称） | 扫描后从代码中提取名称 |
-| `/pkr-add plan <name> <description>` | B — 计划注册（指定名称） | 不扫描代码，直接生成计划中文档 |
+| `/pkr-add plan <name> <description>` | B — 计划注册（指定名称） | 名称支持 `module/name` 格式 |
 | `/pkr-add plan <description>` | B — 计划注册（自动生成名称） | 从描述中提取名称 |
 
 - 第一个参数为 `plan` → 模式 B
@@ -111,16 +117,19 @@ YAML Front Matter 字段：
 ### 用法
 
 ```
-# 指定名称
+# 指定名称（项目自有，放根目录）
 /pkr-add retry-engine "项目自有的重试引擎，支持指数退避和最大重试次数配置"
-/pkr-add spring-cache "Spring Cache 的声明式缓存能力"
+
+# 指定名称（框架能力，使用 module/name 格式，自动归入子目录）
+/pkr-add springboot/cache "Spring Cache 的声明式缓存能力"
+/pkr-add springboot/ioc "Spring IoC 容器依赖注入"
 
 # 自动生成名称（从代码中提取）
 /pkr-add "项目自有的重试引擎，支持指数退避和最大重试次数配置"
 /pkr-add "项目的事件总线，基于 Guava EventBus 封装"
 ```
 
-- `[name]`（可选）：英文短横线格式名称，未提供时从扫描到的代码自动提取
+- `[name]`（可选）：名称，支持 `module/name` 格式。含 `/` 时自动创建子目录；未提供时从扫描到的代码自动提取
 - `<description>`（必填）：描述能力的核心功能，指导扫描方向
 
 ### 工作流程
@@ -169,7 +178,10 @@ YAML Front Matter 字段：
    - `name`：用户提供或从代码自动提取的名称
    - 读取对应模板
    - 用扫描结果填充"如何使用"和"使用实例"
-   - 写入 `docs/capabilities/` 或 `docs/conventions/`
+   - **写入路径规则**：
+     - 若 `source=框架:xxx` 且用户未指定 module → 自动写入 `{xxx}/` 子目录（如 `docs/capabilities/springboot/cache.md`）
+     - 若 `name` 包含 `/`（如 `springboot/cache`）→ 写入对应子目录，自动创建
+     - 若 `source=项目自有` → 写入根目录
 
 ---
 
@@ -198,7 +210,7 @@ YAML Front Matter 字段：
 ```
 
 - `plan`（必填）：路由关键词，标识为计划注册模式
-- `[name]`（可选）：英文短横线格式名称，未提供时从描述中自动提取
+- `[name]`（可选）：名称，支持 `module/name` 格式，未提供时从描述中自动提取
 - `<description>`（必填）：描述计划中的能力/规范的核心功能和预期设计
 
 ### 工作流程
@@ -219,7 +231,9 @@ YAML Front Matter 字段：
    - "解决什么问题"：基于 description 展开
    - "如何使用"：描述预期的 API 设计和使用方式（标注为"预期设计，待实现"）
    - "使用实例"：描述预期的使用场景和伪代码示例（标注为"预期示例，待实现"）
-5. **写入文档**：写入 `docs/capabilities/` 或 `docs/conventions/`
+5. **写入文档**：
+   - 若 `name` 包含 `/` → 写入对应子目录，自动创建
+   - 否则 → 写入根目录
 
 ---
 

@@ -1,5 +1,6 @@
 ---
-name: {name}
+name: {name}                          — 格式：[module/]short-name，含模块前缀时为唯一标识符
+# module: {module_name}              — 模块名（可选，由子目录自动推导，如文档在 springboot/ 下则 module: springboot）
 description: {description}
 status: {计划中 | 已实现 | 已废弃}
 scope: {前端 | 后端 | 全栈}

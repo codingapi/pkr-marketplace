@@ -2,9 +2,9 @@
 """
 PKR Index Rebuilder — 分别在各子目录下生成独立的 index.md。
 
-扫描 docs/capabilities/ 和 docs/conventions/ 下的文档，
-从 YAML frontmatter 提取 name/description/status/scope/source，
-分别在各自目录下生成 index.md。
+扫描 docs/capabilities/ 和 docs/conventions/ 下的文档（含子目录），
+从 YAML frontmatter 提取 name/description/status/scope/source/module，
+按模块分组，分别在各自目录下生成 index.md。
 
 生成文件:
   - docs/capabilities/index.md
@@ -76,22 +76,30 @@ def parse_frontmatter(filepath):
 
 
 def collect_category_docs(category_dir):
-    """收集某个分类目录下的所有文档（排除 index.md）。"""
+    """递归收集某个分类目录下的所有文档（排除各级 index.md）。"""
     items = []
     if not category_dir.is_dir():
         return items
-    for md_file in sorted(category_dir.glob("*.md")):
+    for md_file in sorted(category_dir.rglob("*.md")):
         if md_file.name == "index.md":
             continue
         fm = parse_frontmatter(md_file)
         if fm:
+            relpath = md_file.relative_to(category_dir)
+            # 提取 module：一级子目录名，根目录文件无 module
+            parts = relpath.parts
+            if len(parts) > 1:
+                fm["_module"] = parts[0]
+            else:
+                fm["_module"] = fm.get("module", "")
+            fm["_relpath"] = str(relpath)
             fm["_filename"] = md_file.name
             items.append(fm)
     return items
 
 
 def generate_category_index(title, title_cn, items):
-    """为某个分类生成独立的 index.md 内容。"""
+    """为某个分类生成独立的 index.md 内容，按模块分组。"""
     lines = [
         f"# {title_cn}（{title}）",
         "",
@@ -104,27 +112,41 @@ def generate_category_index(title, title_cn, items):
         lines.append("")
         return "\n".join(lines) + "\n"
 
+    # 按 module 分组：无 module 的归为"核心"
+    modules = {}
+    for item in items:
+        mod = item.get("_module", "") or "核心"
+        modules.setdefault(mod, []).append(item)
+
     for status in ["已实现", "计划中", "已废弃"]:
-        group = [i for i in items if i.get("status") == status]
-        if not group:
+        # 收集该状态下的所有模块和条目
+        status_modules = {}
+        for mod, mod_items in sorted(modules.items()):
+            group = [i for i in mod_items if i.get("status") == status]
+            if group:
+                status_modules[mod] = group
+
+        if not status_modules:
             continue
 
         status_icon = {"已实现": "✅", "计划中": "🗓️", "已废弃": "⚠️"}.get(status, "")
         lines.append(f"## {status_icon} {status}")
         lines.append("")
-        lines.append("| 名称 | 描述 | 范围 | 来源 |")
-        lines.append("|------|------|------|------|")
+        lines.append("| 名称 | 模块 | 描述 | 范围 | 来源 |")
+        lines.append("|------|------|------|------|------|")
 
-        for item in group:
-            name = item["name"]
-            desc = item.get("description", "")
-            scope = item.get("scope", "")
-            source = item.get("source", "")
-            filename = item.get("_filename", "")
-            link = f"[{name}](./{filename})" if filename else name
-            if len(desc) > 80:
-                desc = desc[:77] + "..."
-            lines.append(f"| {link} | {desc} | {scope} | {source} |")
+        for mod, group in sorted(status_modules.items()):
+            for item in group:
+                name = item["name"]
+                desc = item.get("description", "")
+                scope = item.get("scope", "")
+                source = item.get("source", "")
+                relpath = item.get("_relpath", "")
+                link = f"[{name}](./{relpath})" if relpath else name
+                mod_label = "" if mod == "核心" else mod
+                if len(desc) > 80:
+                    desc = desc[:77] + "..."
+                lines.append(f"| {link} | {mod_label} | {desc} | {scope} | {source} |")
 
         lines.append("")
 

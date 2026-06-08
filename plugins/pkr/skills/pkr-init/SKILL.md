@@ -15,9 +15,9 @@ disable-model-invocation: true
 
 ## 文档存储位置
 
-- Capability 文档 → `docs/capabilities/{name}.md`
+- Capability 文档 → `docs/capabilities/[{module}/]{name}.md`（框架文档归入子目录）
 - Capability 索引 → `docs/capabilities/index.md`（由脚本自动维护）
-- Convention 文档 → `docs/conventions/{name}.md`
+- Convention 文档 → `docs/conventions/[{module}/]{name}.md`
 - Convention 索引 → `docs/conventions/index.md`（由脚本自动维护）
 
 ## 文档格式
@@ -32,12 +32,18 @@ YAML Front Matter 字段：
 
 | 字段 | 说明 |
 |------|------|
-| `name` | 英文短横线格式名称（如 `workflow-engine`） |
+| `name` | 名称，格式 `[module/]short-name`（如 `workflow-engine` 或 `springboot/cache`） |
 | `description` | 一句话描述 |
 | `status` | `计划中` / `已实现` / `已废弃` |
 | `scope` | `前端` / `后端` / `全栈` |
 | `source` | `项目自有` / `框架:{框架名}` / `计划` |
 | `import` | 导入坐标（Maven GAV / npm 包路径 / 模块路径等） |
+
+**可选字段：**
+
+| 字段 | 说明 |
+|------|------|
+| `module` | 模块名（由子目录自动推导，如文档在 `springboot/` 下则 `module: springboot`） |
 
 **条件字段（根据 source 类型选填）：**
 
@@ -180,8 +186,14 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
      脚本内部自动按路径字典序排序，无需手动排序参数
    - **source=框架:xxx** → 从依赖声明文件读取并记录 `framework_version`
    - **source=计划** → 无需额外条件字段
-6. Write 到 `docs/capabilities/` 或 `docs/conventions/`
-7. 文件名 = `name` 字段值（英文短横线格式）+ `.md`
+6. **按 source 自动分模块写入**：
+   - **source=框架:xxx** → 写入子目录 `{xxx}/`（如 `docs/capabilities/springboot/cache.md`）
+     - `name` 字段包含模块前缀：`springboot/cache`
+     - `module` 字段填入子目录名：`springboot`
+     - 自动创建子目录（如不存在）
+   - **source=项目自有** → 写入根目录（无子目录）
+   - **source=计划** → 写入根目录
+7. 文件名 = `name` 中 `/` 后的部分 + `.md`（如 `springboot/cache` → 文件名 `cache.md`，放在 `springboot/` 下）
 
 ---
 

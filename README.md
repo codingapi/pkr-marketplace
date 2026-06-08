@@ -1,6 +1,6 @@
 # pkr-marketplace
 
-面向 Claude Code 的 **项目知识注册中心（PKR）** 插件市场。扫描项目代码，自动发现并注册可复用能力（Capability）和开发规范（Convention），让 AI 在编码前知道项目已有什么、该怎么做。
+面向 Claude Code 的 **项目知识注册中心（PKR）** 插件市场,Project Knowledge Registry (PKR)。扫描项目代码，自动发现并注册可复用能力（Capability）和开发规范（Convention），让 AI 在编码前知道项目已有什么、该怎么做。
 
 ## 核心理念
 

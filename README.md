@@ -27,8 +27,14 @@
 
 ### 1. 安装插件
 
+安装插件市场，首次需要
 ```bash
-/plugin install git@github.com:codingapi/pkr-marketplace.git pkr
+/plugin marketplace add git@github.com:codingapi/pkr-marketplace.git
+```
+
+安装pkr插件
+```bash
+/plugin install pkr@pkr-marketplace
 ```
 
 ### 2. 初始化项目

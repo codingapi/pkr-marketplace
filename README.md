@@ -1,6 +1,21 @@
 # pkr-marketplace
 
-面向 Claude Code 的 **项目知识注册中心（PKR）** 插件市场,Project Knowledge Registry (PKR)。扫描项目代码，自动发现并注册可复用能力（Capability）和开发规范（Convention），让 AI 在编码前知道项目已有什么、该怎么做。
+面向 Claude Code 的 **项目知识注册中心（PKR）** 插件市场。扫描项目代码，自动发现并注册可复用能力（Capability）和开发规范（Convention），让 AI 在编码前知道项目已有什么、该怎么做。
+
+## 什么是 PKR？
+
+**PKR** 是 **Project Knowledge Registry**（项目知识注册中心）的缩写。
+
+它的核心理念是：**AI 编码前应该先了解项目已有什么**。
+
+传统开发中，新成员入职会先看项目文档、问老员工"项目里有哪些工具类、用什么规范"。但在 AI 辅助编码场景下，Claude 虽然能读代码，却不知道：
+- 项目已经有哪些可复用的能力（如 WorkflowEngine、EventBus）
+- 项目有哪些必须遵循的开发规范（如 Design Token、事件发布规则）
+
+**PKR 就是给 AI 准备的"项目知识库"**：
+- 通过结构化文档记录项目的 **能力（Capability）** 和 **规范（Convention）**
+- 在 AI 编码前自动注入这些知识到上下文
+- 避免重复造轮子和违反规范
 
 ## 核心理念
 

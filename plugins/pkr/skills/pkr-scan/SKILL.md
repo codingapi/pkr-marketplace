@@ -49,6 +49,18 @@ YAML Front Matter 字段：
   ```
 - **禁止 Read+stdin**：不需要先 Read 脚本源码再管道执行，直接 python3 调用即可
 
+## 项目初始化
+
+首次使用前，需执行初始化脚本配置目标项目：
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/pkr-setup.sh"
+```
+
+该脚本会：
+1. 创建 `docs/capabilities/` 和 `docs/conventions/` 目录
+2. 在项目的 `CLAUDE.md` 中添加 PKR 知识查阅约束（幂等，不会重复添加）
+
 ## 命令模式
 
 根据用户传入的参数选择工作流：

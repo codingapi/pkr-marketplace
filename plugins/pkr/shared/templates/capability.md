@@ -6,10 +6,10 @@ scope: {前端 | 后端 | 全栈}
 source: {项目自有 | 框架:{框架名} | 计划}
 # 以下字段根据 source 类型选填：
 # source=项目自有 时必填：
-# last_commit: {git short hash}      — 关联源码的最后一次 commit
-# code_files:                         — 关联的源码文件列表
-#   - {file_path_1}
-#   - {file_path_2}
+# symbols:                            — 关联的代码符号列表（类名、函数名等）
+#   - {SymbolName1}
+#   - {SymbolName2}
+# content_hash: {sha256}              — 所有关联文件按路径排序拼接后的内容 hash（通过 compute_content_hash.py 计算）
 # source=框架:{名称} 时必填：
 # framework_version: {version}        — 框架依赖版本
 ---

@@ -42,8 +42,8 @@ YAML Front Matter 字段：
 
 | source 类型 | 额外字段 | 用途 |
 |------------|---------|------|
-| `项目自有` | `last_commit` | 关联源码的最后一次 git commit hash（用于变更检测） |
-| `项目自有` | `code_files` | 关联的源码文件列表（用于定位 git 变更） |
+| `项目自有` | `symbols` | 关联的代码符号列表（类名、函数名等，用于定位源码） |
+| `项目自有` | `content_hash` | 所有关联文件按路径排序拼接后的内容 hash（用于变更检测） |
 | `框架:xxx` | `framework_version` | 依赖版本号（用于对比依赖版本是否变化） |
 | `计划` | 无额外字段 | sync 时忽略计划中的文档 |
 
@@ -54,6 +54,7 @@ YAML Front Matter 字段：
 - **执行方式**：通过 Bash 直接执行，使用 `${CLAUDE_PLUGIN_ROOT}` 定位脚本绝对路径
   ```bash
   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_pkr_index.py"
+  python3 "${CLAUDE_PLUGIN_ROOT}/scripts/compute_content_hash.py" <file1> [file2] ...
   ```
 - **禁止 Read+stdin**：不需要先 Read 脚本源码再管道执行，直接 python3 调用即可
 
@@ -85,15 +86,17 @@ YAML Front Matter 字段：
 **source=项目自有：**
 - 在代码中查找对应的类/文件是否仍存在
 - 若不存在：标记为 `已废弃`
-- 若存在：**使用 Git commit hash 检测变更**
-  ```bash
-  # 获取关联源码文件的最新 commit hash
-  git log -1 --format=%h -- <code_files>
-  ```
-  - 对比 frontmatter 中的 `last_commit` 字段
-  - 若 hash 相同 → **跳过**（代码未变化）
+- 若存在：**使用内容 hash 检测变更**
+  - 根据 frontmatter 中的 `symbols` 列表，通过 CodeGraph 或 grep 定位符号所在的源文件
+  - 计算当前内容 hash（将所有关联文件按路径排序拼接，归一化行尾后计算 SHA-256）：
+    ```bash
+    python3 "${CLAUDE_PLUGIN_ROOT}/scripts/compute_content_hash.py" <file1> <file2> ...
+    ```
+    脚本内部自动按路径字典序排序，无需手动排序参数
+  - 对比 frontmatter 中的 `content_hash` 字段
+  - 若 hash 相同 → **跳过**（代码内容未变化）
   - 若 hash 不同 → 重新分析代码并更新文档
-  - 更新后写入新的 `last_commit` 值
+  - 更新后写入新的 `content_hash` 值
 
 **source=框架:**
 - 检查依赖是否仍存在

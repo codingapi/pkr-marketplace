@@ -42,8 +42,8 @@ YAML Front Matter 字段：
 
 | source 类型 | 额外字段 | 用途 |
 |------------|---------|------|
-| `项目自有` | `last_commit` | 关联源码的最后一次 git commit hash（用于 sync 变更检测） |
-| `项目自有` | `code_files` | 关联的源码文件列表（用于 sync 时定位 git 变更） |
+| `项目自有` | `symbols` | 关联的代码符号列表（类名、函数名等，用于定位源码） |
+| `项目自有` | `content_hash` | 所有关联文件按路径排序拼接后的内容 hash（用于 sync 变更检测） |
 | `框架:xxx` | `framework_version` | 依赖版本号（用于 sync 时对比依赖版本是否变化） |
 | `计划` | 无额外字段 | sync 时忽略计划中的文档 |
 
@@ -54,6 +54,7 @@ YAML Front Matter 字段：
 - **执行方式**：通过 Bash 直接执行，使用 `${CLAUDE_PLUGIN_ROOT}` 定位脚本绝对路径
   ```bash
   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_pkr_index.py"
+  python3 "${CLAUDE_PLUGIN_ROOT}/scripts/compute_content_hash.py" <file1> [file2] ...
   ```
 - **禁止 Read+stdin**：不需要先 Read 脚本源码再管道执行，直接 python3 调用即可
 
@@ -137,11 +138,12 @@ YAML Front Matter 字段：
      - 公开 API（方法签名、参数、返回值）
      - 配置方式（构造函数、注解、配置文件）
      - 依赖关系
-   - 记录 `code_files`（关联的源码文件列表）
-   - 记录 `last_commit`：
+   - 记录 `symbols`（关联的代码符号列表：类名、函数名等）
+   - 记录 `content_hash`（将所有关联文件按路径排序拼接，归一化行尾后计算 SHA-256）：
      ```bash
-     git log -1 --format=%h -- <code_files>
+     python3 "${CLAUDE_PLUGIN_ROOT}/scripts/compute_content_hash.py" <file1> <file2> ...
      ```
+     脚本内部自动按路径字典序排序，无需手动排序参数
 
    **source=框架:xxx：**
    - 从依赖声明文件（pom.xml / package.json 等）读取版本号
@@ -204,7 +206,7 @@ YAML Front Matter 字段：
    - `name`：用户提供或自动生成的名称
    - `status: 计划中`
    - `source: 计划`
-   - 无条件字段（无 `last_commit`、`code_files`、`framework_version`）
+   - 无条件字段（无 `content_hash`、`symbols`、`framework_version`）
    - "解决什么问题"：基于 description 展开
    - "如何使用"：描述预期的 API 设计和使用方式（标注为"预期设计，待实现"）
    - "使用实例"：描述预期的使用场景和伪代码示例（标注为"预期示例，待实现"）

@@ -42,8 +42,8 @@ YAML Front Matter 字段：
 
 | source 类型 | 额外字段 | 用途 |
 |------------|---------|------|
-| `项目自有` | `last_commit` | 关联源码的最后一次 git commit hash（用于变更检测） |
-| `项目自有` | `code_files` | 关联的源码文件列表（用于定位 git 变更） |
+| `项目自有` | `symbols` | 关联的代码符号列表（类名、函数名等，用于定位源码） |
+| `项目自有` | `content_hash` | 所有关联文件按路径排序拼接后的内容 hash（用于变更检测） |
 | `框架:xxx` | `framework_version` | 依赖版本号（用于对比依赖版本是否变化） |
 | `计划` | 无额外字段 | sync 时忽略计划中的文档 |
 
@@ -54,6 +54,7 @@ YAML Front Matter 字段：
 - **执行方式**：通过 Bash 直接执行，使用 `${CLAUDE_PLUGIN_ROOT}` 定位脚本绝对路径
   ```bash
   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_pkr_index.py"
+  python3 "${CLAUDE_PLUGIN_ROOT}/scripts/compute_content_hash.py" <file1> [file2] ...
   ```
 - **禁止 Read+stdin**：不需要先 Read 脚本源码再管道执行，直接 python3 调用即可
 
@@ -80,7 +81,7 @@ YAML Front Matter 字段：
    - 若找不到 → 提示用户该文档不存在，建议用 `/pkr-add` 新建
 2. **读取文档**：解析 frontmatter，获取 `source`、`status` 和条件字段
 3. **按 source 定向扫描**：
-   - **source=项目自有** → 在代码中定位 `code_files` 中列出的文件，分析当前 API
+   - **source=项目自有** → 根据 `symbols` 列表在代码中定位符号所在文件，分析当前 API
      - 若提供了 `description`：重点关注描述中提到的功能点（如新增的 API、配置项）
    - **source=框架:xxx** → 检查依赖是否仍存在，对比 `framework_version`
      - 若提供了 `description`：结合描述更新框架使用方式
@@ -92,7 +93,10 @@ YAML Front Matter 字段：
    - **冲突处理**：代码事实与文档冲突 → 以代码为准
    - 若提供了 `description`：确保文档内容体现了描述中提到的变更
 5. **更新 frontmatter 条件字段**：
-   - `source=项目自有` → 更新 `last_commit` 为当前 git hash
+   - `source=项目自有` → 将所有关联文件按路径排序拼接，归一化行尾后计算 hash，更新 `content_hash`：
+     ```bash
+     python3 "${CLAUDE_PLUGIN_ROOT}/scripts/compute_content_hash.py" <file1> <file2> ...
+     ```
    - `source=框架:xxx` → 更新 `framework_version` 为当前版本
 6. **追加变更记录**：
    - 格式：`> 🔄 最后更新: {日期} — {变更摘要}`
@@ -104,7 +108,7 @@ YAML Front Matter 字段：
 | | `/pkr-sync` | `/pkr-update <name> [description]` |
 |---|---|---|
 | 范围 | 全部文档 | 单个文档 |
-| 变更检测 | 自动（git hash / 版本号） | 自动 + 可选手动提示 |
+| 变更检测 | 自动（content hash / 版本号） | 自动 + 可选手动提示 |
 | 速度 | 慢（全量扫描） | 快（定向分析） |
 | 适用场景 | 定期全量同步 | 改了某个能力后立即更新 |
 | description 参数 | 不支持 | 支持（指导更新重点） |

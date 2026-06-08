@@ -67,7 +67,7 @@ python3 "$CLAUDE_PLUGIN_ROOT/scripts/pkr_setup.py"
 ### 3. 首次扫描
 
 ```bash
-/pkr-scan init
+/pkr-init
 ```
 
 Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和规范，由你确认后生成文档。
@@ -76,21 +76,21 @@ Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和�
 
 ```bash
 # 修改了某个能力后，立即更新对应文档
-/pkr-scan update workflow-engine
+/pkr-update workflow-engine
 
 # 带描述信息，指导更新重点
-/pkr-scan update workflow-engine "新增了重试机制"
+/pkr-update workflow-engine "新增了重试机制"
 
 # 定期全量同步（检查所有文档与代码的一致性）
-/pkr-scan sync
+/pkr-sync
 
 # 手动注册遗漏的能力或规范
-/pkr-scan add
+/pkr-add
 ```
 
 ## 命令详解
 
-### `/pkr-scan init` — 首次构建
+### `/pkr-init` — 首次构建
 
 扫描项目代码、依赖声明和规划文档，发现候选知识：
 
@@ -102,7 +102,7 @@ Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和�
 
 扫描完成后会列出候选清单，由你逐个确认/排除，确认后自动生成文档。
 
-### `/pkr-scan sync` — 全量同步
+### `/pkr-sync` — 全量同步
 
 对比所有现有文档与代码/依赖现状，**智能检测变更**后批量更新：
 
@@ -113,17 +113,17 @@ Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和�
 - 消失的 → 标记为 `已废弃`（不删除）
 - 变更的 → 幂等合并（事实以代码为准，人工编辑保留）
 
-### `/pkr-scan update <name> [description]` — 单项更新
+### `/pkr-update <name> [description]` — 单项更新
 
 针对单个已注册的能力或规范文档，重新扫描代码并更新：
 
 ```bash
 # 仅更新文档
-/pkr-scan update workflow-engine
+/pkr-update workflow-engine
 
 # 带描述信息，指导更新重点
-/pkr-scan update workflow-engine "新增了重试机制和超时配置"
-/pkr-scan update design-token "添加了暗黑主题支持"
+/pkr-update workflow-engine "新增了重试机制和超时配置"
+/pkr-update design-token "添加了暗黑主题支持"
 ```
 
 **参数说明**：
@@ -137,7 +137,7 @@ Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和�
 
 适用于修改了某个能力后立即更新对应文档，比全量 sync 更快。
 
-### `/pkr-scan add` — 手动注册
+### `/pkr-add` — 手动注册
 
 通用的手动入口，用于补漏和扩展：
 
@@ -244,8 +244,8 @@ docs/
 │  ↓                                                      │
 │  编码后                                                 │
 │  ↓                                                      │
-│  /pkr-scan update <name> [desc] → 更新能力文档          │
-│  /pkr-scan add → 注册新产生的能力                       │
+│  /pkr-update <name> [desc] → 更新能力文档          │
+│  /pkr-add → 注册新产生的能力                       │
 └─────────────────────────────────────────────────────────┘
 ```
 

@@ -6,7 +6,7 @@ description: >
   "update PKR", "add capability", "register convention",
   "pkr", or mentions project knowledge registry.
 argument-hint: "[init|sync|update <name>|add]"
-allowed-tools: [Read, Write, Edit, Bash, AskUserQuestion, Glob, Grep]
+allowed-tools: [Read, Write, Edit, Bash, AskUserQuestion, Glob, Grep, mcp__codegraph__*]
 disable-model-invocation: true
 ---
 

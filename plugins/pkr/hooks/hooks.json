@@ -24,6 +24,16 @@
             "type": "command",
             "if": "Edit(*docs/conventions*)",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_pkr_index.py\""
+          },
+          {
+            "type": "command",
+            "if": "Write(*docs/agents*)",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_pkr_index.py\""
+          },
+          {
+            "type": "command",
+            "if": "Edit(*docs/agents*)",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_pkr_index.py\""
           }
         ]
       }

@@ -52,17 +52,13 @@
 /plugin install pkr@pkr-marketplace
 ```
 
-### 2. 初始化项目
-
-执行插件提供的初始化脚本，自动创建目录结构并配置 CLAUDE.md：
+### 2. 创建项目结构
 
 ```bash
-python3 "$CLAUDE_PLUGIN_ROOT/scripts/pkr_setup.py"
+/pkr-create
 ```
 
-该脚本会：
-- 创建 `docs/capabilities/` 和 `docs/conventions/` 目录
-- 在项目的 `CLAUDE.md` 中添加 PKR 知识查阅约束（幂等，不会重复添加）
+创建 PKR 所需的目录结构（`docs/capabilities/`、`docs/conventions/`、`docs/agents/`）并在 CLAUDE.md 中注入知识查阅约束。
 
 ### 3. 首次扫描
 
@@ -71,6 +67,7 @@ python3 "$CLAUDE_PLUGIN_ROOT/scripts/pkr_setup.py"
 ```
 
 Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和规范，由你确认后生成文档。
+**已有文档会自动跳过**，不会重复分析（包括从外部导入的模块文档）。
 
 ### 4. 日常维护
 
@@ -93,7 +90,29 @@ Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和�
 
 ## 命令详解
 
-### `/pkr-init` — 首次构建
+### `/pkr-create` — 创建项目结构
+
+创建 PKR 所需的目录结构和 CLAUDE.md 集成：
+
+- 创建 `docs/capabilities/`、`docs/conventions/`、`docs/agents/` 目录
+- 在 CLAUDE.md 中注入知识查阅约束（幂等）
+
+### `/pkr-export <module> ...` — 导出模块文档
+
+将指定模块的能力和协规文档导出到 `docs/agents/{module}/`，供其他项目作为外部能力导入：
+
+```bash
+/pkr-export mylib                    # 导出单个模块
+/pkr-export mylib springboot         # 导出多个模块
+```
+
+导出规则：
+- `source: 项目自有` → 转换为 `source: 框架:{module}`，移除 `symbols`/`content_hash`，补充 `framework_version`
+- `source: 框架:xxx` → 原样复制
+
+下游项目使用：将导出的文件复制到 `docs/capabilities/{module}/` 和 `docs/conventions/{module}/`，然后执行 `/pkr-init`。
+
+### `/pkr-init` — 扫描项目
 
 扫描项目代码、依赖声明和规划文档，发现候选知识：
 
@@ -105,32 +124,34 @@ Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和�
 
 扫描完成后会列出候选清单，由你逐个确认/排除，确认后自动生成文档。
 
+**已有文档自动跳过**：`docs/capabilities/` 和 `docs/conventions/` 中已存在的文档不会重复分析（包括从外部导入的模块文档）。同模块下的新发现仍可补充。
+
 ### `/pkr-sync` — 全量同步
 
 对比所有现有文档与代码/依赖现状，**智能检测变更**后批量更新：
 
-- **项目自有**：通过 Git commit hash 检测关联源码是否变化，未变化则跳过
+- **项目自有**：通过内容 hash（content_hash）检测关联源码是否变化，未变化则跳过
 - **三方框架**：通过依赖版本号检测，版本未变则跳过
 - **计划中**：完全忽略（计划中的能力不参与 sync）
 - 新增的 → 提示添加
 - 消失的 → 标记为 `已废弃`（不删除）
 - 变更的 → 幂等合并（事实以代码为准，人工编辑保留）
 
-### `/pkr-update <name> [description]` — 单项更新
+### `/pkr-update <module>/<name> [description]` — 单项更新
 
 针对单个已注册的能力或规范文档，重新扫描代码并更新：
 
 ```bash
 # 仅更新文档
-/pkr-update workflow-engine
+/pkr-update myapp/workflow-engine
 
 # 带描述信息，指导更新重点
-/pkr-update workflow-engine "新增了重试机制和超时配置"
-/pkr-update design-token "添加了暗黑主题支持"
+/pkr-update myapp/workflow-engine "新增了重试机制和超时配置"
+/pkr-update springboot/cache "升级到 Caffeine 3.x"
 ```
 
 **参数说明**：
-- `<name>`（必填）：文档名称（对应 frontmatter 中的 `name` 字段）
+- `<module>/<name>`（必填）：文档名称（格式 `module/short-name`）
 - `[description]`（可选）：变更描述，用于指导 Claude 重点关注哪些变化
 
 **description 的作用**：
@@ -140,41 +161,42 @@ Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和�
 
 适用于修改了某个能力后立即更新对应文档，比全量 sync 更快。
 
-### `/pkr-add [name] <description>` — 从代码注册
+### `/pkr-add <module>/<name> <description>` — 从代码注册
 
 从项目代码或三方框架中扫描查找能力，生成 `已实现` 文档：
 
 ```bash
 # 指定名称注册
-/pkr-add retry-engine "项目自有的重试引擎，支持指数退避和最大重试次数"
+/pkr-add myapp/retry-engine "项目自有的重试引擎，支持指数退避和最大重试次数"
+/pkr-add springboot/cache "Spring Cache 声明式缓存能力"
 
-# 自动生成名称（从扫描到的代码类名提取，如 RetryEngine → retry-engine）
+# 自动生成名称（从扫描到的代码类名提取，如 RetryEngine → myapp/retry-engine）
 /pkr-add "项目自有的重试引擎，支持指数退避"
 /pkr-add "项目的事件总线，基于 Guava EventBus 封装"
 ```
 
 **参数说明**：
-- `[name]`（可选）：英文短横线格式名称，未提供时从代码自动提取
+- `<module>/<name>`（可选）：格式 `module/short-name`，未提供时从代码自动提取
 - `<description>`（必填）：描述能力功能，指导扫描方向
 
 Claude 会自动判断来源是项目自有还是三方框架，扫描代码后展示结果供确认。
 
-### `/pkr-add plan [name] <description>` — 计划注册
+### `/pkr-add plan <module>/<name> <description>` — 计划注册
 
 不扫描代码，基于描述生成 `计划中` 文档：
 
 ```bash
 # 指定名称
-/pkr-add plan rule-engine "基于 Drools 的业务规则引擎，支持规则定义和条件匹配"
+/pkr-add plan myapp/rule-engine "基于 Drools 的业务规则引擎，支持规则定义和条件匹配"
 
-# 自动生成名称（从描述提取核心名词，如"消息中间件" → message-queue）
+# 自动生成名称（从描述提取核心名词，如"消息中间件" → myapp/message-queue）
 /pkr-add plan "引入 RocketMQ 作为消息中间件，支持异步解耦"
 /pkr-add plan "升级版 Design Token 体系，支持暗黑主题"
 ```
 
 **参数说明**：
 - `plan`（必填）：路由关键词，标识为计划注册
-- `[name]`（可选）：英文短横线格式名称，未提供时从描述自动提取
+- `<module>/<name>`（可选）：格式 `module/short-name`，未提供时从描述自动提取
 - `<description>`（必填）：描述计划中能力的核心功能和预期设计
 
 ## 文档格式
@@ -227,7 +249,7 @@ API 说明、配置方式、依赖说明。
 
 ## 目录结构（安装后）
 
-安装插件并执行初始化后，目标项目的 docs 目录结构：
+执行 `/pkr-create` 后，目标项目的 docs 目录结构：
 
 ```
 docs/
@@ -238,16 +260,22 @@ docs/
 │   └── springboot/           # 框架模块
 │       ├── cache.md          # name: springboot/cache
 │       └── ioc.md            # name: springboot/ioc
-└── conventions/
-    ├── index.md              # 自动生成，请勿手动编辑
-    └── design-token.md
+├── conventions/
+│   ├── index.md              # 自动生成，请勿手动编辑
+│   └── myapp/
+│       └── design-token.md
+└── agents/                   # 外部模块导出文档（由 /pkr-export 生成或从外部复制）
+    └── extlib/
+        ├── manifest.json
+        ├── capabilities/
+        └── conventions/
 ```
 
 `index.md` 由 Hook 在每次文档写入/编辑后自动重建。
 
 ## CLAUDE.md 集成
 
-初始化脚本会自动在项目的 `CLAUDE.md` 中添加以下内容：
+`/pkr-create` 会自动在项目的 `CLAUDE.md` 中添加以下内容：
 
 ```markdown
 ## PKR 知识查阅（编码前必须）

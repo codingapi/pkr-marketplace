@@ -11,7 +11,7 @@ disable-model-invocation: true
 
 # PKR Export — 导出模块文档供其他项目使用
 
-将指定模块的能力和协规文档导出到 `docs/agents/{module}/` 目录，供其他项目作为外部能力导入使用。
+将指定模块的能力和协规文档导出到 `docs/agents/` 目录，按 `capabilities/{module}/` 和 `conventions/{module}/` 分类存放，供其他项目作为外部能力导入使用。
 
 ## 用法
 
@@ -26,13 +26,15 @@ disable-model-invocation: true
 
 ```
 docs/agents/
-└── {module}/
-    ├── manifest.json                # 导出元信息
-    ├── capabilities/
-    │   └── *.md                     # 能力文档
-    └── conventions/
+├── capabilities/
+│   └── {module}/
+│       └── *.md                     # 能力文档
+└── conventions/
+    └── {module}/
         └── *.md                     # 规范文档
 ```
+
+> 此结构与 `docs/capabilities/{module}/` 和 `docs/conventions/{module}/` 保持一致，便于 pkr-init 匹配。
 
 ## Source 转换规则
 
@@ -58,27 +60,15 @@ docs/agents/
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_export.py" <module1> [module2] ...
 ```
 
-## manifest.json 格式
-
-```json
-{
-  "module": "mylib",
-  "version": "1.2.0",
-  "capabilities": 3,
-  "conventions": 2,
-  "exported_at": "2026-06-08"
-}
-```
-
 ## 下游项目使用方式
 
-框架开发者将 `docs/agents/{module}/` 随包发布（如 npm 包的 `agents/` 目录），
+框架开发者将 `docs/agents/` 随包发布（如 npm 包的 `agents/` 目录），
 下游项目安装后执行：
 
 ```bash
 # 将导出文件复制到项目的 capabilities/conventions 目录
-cp -r node_modules/{package}/agents/{module}/capabilities/ docs/capabilities/{module}/
-cp -r node_modules/{package}/agents/{module}/conventions/ docs/conventions/{module}/
+cp -r node_modules/{package}/agents/capabilities/{module}/ docs/capabilities/{module}/
+cp -r node_modules/{package}/agents/conventions/{module}/ docs/conventions/{module}/
 ```
 
 然后执行 `/pkr-init`，已导入的文档会自动跳过，不再重复分析。

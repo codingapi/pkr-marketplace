@@ -3,7 +3,8 @@
 PKR Export — 导出指定模块的文档供其他项目使用。
 
 将 docs/capabilities/{module}/ 和 docs/conventions/{module}/ 下的文档
-导出到 docs/agents/{module}/ 目录，并转换 source 类型。
+导出到 docs/agents/capabilities/{module}/ 和 docs/agents/conventions/{module}/，
+并转换 source 类型。
 
 用法:
     python3 pkr_export.py <module1> [module2] ... [project_root]
@@ -16,7 +17,6 @@ import os
 import re
 import shutil
 import sys
-from datetime import date
 from pathlib import Path
 
 
@@ -178,13 +178,13 @@ def transform_frontmatter(content, module, version):
 def export_module(module, project_root, version):
     """导出单个模块的文档。"""
     docs_dir = project_root / "docs"
-    agents_dir = docs_dir / "agents" / module
+    agents_dir = docs_dir / "agents"
 
     stats = {"capabilities": 0, "conventions": 0}
 
     for category in ["capabilities", "conventions"]:
         src_dir = docs_dir / category / module
-        dst_dir = agents_dir / category
+        dst_dir = agents_dir / category / module
 
         if not src_dir.is_dir():
             continue
@@ -211,27 +211,11 @@ def export_module(module, project_root, version):
             dst_file = dst_dir / md_file.name
             dst_file.write_text(content, encoding="utf-8")
             stats[category] += 1
-            print(f"   ✅ {category}/{module}/{md_file.name} → agents/{module}/{category}/{md_file.name}")
+            print(f"   ✅ {category}/{module}/{md_file.name} → agents/{category}/{module}/{md_file.name}")
 
     return stats
 
 
-def write_manifest(agents_dir, module, version, stats):
-    """生成 manifest.json。"""
-    manifest = {
-        "module": module,
-        "version": version,
-        "capabilities": stats["capabilities"],
-        "conventions": stats["conventions"],
-        "exported_at": str(date.today()),
-    }
-
-    manifest_path = agents_dir / module / "manifest.json"
-    manifest_path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    return manifest
 
 
 def main():
@@ -277,17 +261,17 @@ def main():
             continue
 
         stats = export_module(module, project_root, version)
-        manifest = write_manifest(agents_dir, module, version, stats)
 
         total = stats["capabilities"] + stats["conventions"]
-        print(f"   📋 manifest: {manifest}")
         print(f"   ✅ 共导出 {total} 篇文档")
         print()
 
     print("✅ 导出完成！")
     print()
     print("下一步（下游项目）：")
-    print("  1. 将导出的文件复制到目标项目的 docs/capabilities/{module}/ 和 docs/conventions/{module}/")
+    print("  1. 将导出的文件复制到目标项目：")
+    print("     agents/capabilities/{module}/ → docs/capabilities/{module}/")
+    print("     agents/conventions/{module}/  → docs/conventions/{module}/")
     print("  2. 执行 /pkr-init 扫描项目（已导入的文档会自动跳过）")
 
 

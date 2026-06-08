@@ -15,9 +15,9 @@ disable-model-invocation: true
 
 ## 文档存储位置
 
-- Capability 文档 → `docs/capabilities/[{module}/]{name}.md`
+- Capability 文档 → `docs/capabilities/{module}/{name}.md`（所有文档必须在模块子目录下）
 - Capability 索引 → `docs/capabilities/index.md`（由脚本自动维护）
-- Convention 文档 → `docs/conventions/[{module}/]{name}.md`
+- Convention 文档 → `docs/conventions/{module}/{name}.md`
 - Convention 索引 → `docs/conventions/index.md`（由脚本自动维护）
 
 ## 文档格式
@@ -32,18 +32,13 @@ YAML Front Matter 字段：
 
 | 字段 | 说明 |
 |------|------|
-| `name` | 名称，格式 `[module/]short-name`（如 `workflow-engine` 或 `springboot/cache`） |
+| `name` | 名称，格式 `module/short-name`（如 `myapp/workflow-engine`、`springboot/cache`） |
+| `module` | 模块名（与子目录名一致。项目自有用项目模块名，框架用框架名） |
 | `description` | 一句话描述 |
 | `status` | `计划中` / `已实现` / `已废弃` |
 | `scope` | `前端` / `后端` / `全栈` |
 | `source` | `项目自有` / `框架:{框架名}` / `计划` |
 | `import` | 导入坐标（Maven GAV / npm 包路径 / 模块路径等） |
-
-**可选字段：**
-
-| 字段 | 说明 |
-|------|------|
-| `module` | 模块名（由子目录自动推导） |
 
 **条件字段（根据 source 类型选填）：**
 
@@ -85,9 +80,9 @@ YAML Front Matter 字段：
 
 ## 工作流程
 
-1. **定位文档**：在 `docs/capabilities/` 和 `docs/conventions/`（含子目录）中查找 `{name}.md`
-   - 若 `<name>` 包含 `/`（如 `springboot/cache`）→ 查找 `{module}/{short-name}.md`
-   - 若不含 `/` → 在根目录查找 `{name}.md`
+1. **定位文档**：在 `docs/capabilities/` 和 `docs/conventions/` 的子目录中查找 `{short-name}.md`
+   - `<name>` 必须为 `module/short-name` 格式（如 `springboot/cache`）→ 查找 `{module}/{short-name}.md`
+   - 递归搜索所有子目录匹配 short-name
    - 若找不到 → 提示用户该文档不存在，建议用 `/pkr-add` 新建
 2. **读取文档**：解析 frontmatter，获取 `source`、`status` 和条件字段
 3. **按 source 定向扫描**：

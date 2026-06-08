@@ -15,9 +15,9 @@ disable-model-invocation: true
 
 ## 文档存储位置
 
-- Capability 文档 → `docs/capabilities/[{module}/]{name}.md`
+- Capability 文档 → `docs/capabilities/{module}/{name}.md`（所有文档必须在模块子目录下）
 - Capability 索引 → `docs/capabilities/index.md`（由脚本自动维护）
-- Convention 文档 → `docs/conventions/[{module}/]{name}.md`
+- Convention 文档 → `docs/conventions/{module}/{name}.md`
 - Convention 索引 → `docs/conventions/index.md`（由脚本自动维护）
 
 ## 文档格式
@@ -32,18 +32,13 @@ YAML Front Matter 字段：
 
 | 字段 | 说明 |
 |------|------|
-| `name` | 名称，格式 `[module/]short-name`（如 `workflow-engine` 或 `springboot/cache`） |
+| `name` | 名称，格式 `module/short-name`（如 `myapp/workflow-engine`、`springboot/cache`） |
+| `module` | 模块名（与子目录名一致。项目自有用项目模块名，框架用框架名） |
 | `description` | 一句话描述 |
 | `status` | `计划中` / `已实现` / `已废弃` |
 | `scope` | `前端` / `后端` / `全栈` |
 | `source` | `项目自有` / `框架:{框架名}` / `计划` |
 | `import` | 导入坐标（Maven GAV / npm 包路径 / 模块路径等） |
-
-**可选字段：**
-
-| 字段 | 说明 |
-|------|------|
-| `module` | 模块名（由子目录自动推导，框架文档自动归入对应子目录） |
 
 **条件字段（根据 source 类型选填）：**
 
@@ -178,10 +173,10 @@ YAML Front Matter 字段：
    - `name`：用户提供或从代码自动提取的名称
    - 读取对应模板
    - 用扫描结果填充"如何使用"和"使用实例"
-   - **写入路径规则**：
-     - 若 `source=框架:xxx` 且用户未指定 module → 自动写入 `{xxx}/` 子目录（如 `docs/capabilities/springboot/cache.md`）
-     - 若 `name` 包含 `/`（如 `springboot/cache`）→ 写入对应子目录，自动创建
-     - 若 `source=项目自有` → 写入根目录
+   - **写入路径规则**（所有文档必须在模块子目录下）：
+     - `source=框架:xxx` → 写入 `{xxx}/` 子目录（如 `docs/capabilities/springboot/cache.md`）
+     - `source=项目自有` → 写入 `{项目模块名}/` 子目录（从项目配置推断：Java 用 pom.xml 的 artifactId，Node 用 package.json 的 name，其他用项目根目录名）
+     - 若用户指定了 `module/name` 格式 → 写入对应子目录，自动创建
 
 ---
 
@@ -231,9 +226,9 @@ YAML Front Matter 字段：
    - "解决什么问题"：基于 description 展开
    - "如何使用"：描述预期的 API 设计和使用方式（标注为"预期设计，待实现"）
    - "使用实例"：描述预期的使用场景和伪代码示例（标注为"预期示例，待实现"）
-5. **写入文档**：
-   - 若 `name` 包含 `/` → 写入对应子目录，自动创建
-   - 否则 → 写入根目录
+5. **写入文档**（必须在模块子目录下）：
+   - 若用户指定了 `module/name` → 写入对应子目录
+   - 否则 → 写入 `{预期模块名}/` 子目录（从描述推断或询问用户）
 
 ---
 

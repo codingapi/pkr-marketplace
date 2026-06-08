@@ -209,13 +209,13 @@ API 说明、配置方式、依赖说明。
 
 | 字段 | 值 | 说明 |
 |------|-----|------|
-| `name` | `[module/]short-name` | 文档名称，支持模块前缀（如 `springboot/cache`） |
+| `name` | `module/short-name` | 文档名称，必须包含模块前缀（如 `myapp/workflow-engine`、`springboot/cache`） |
+| `module` | 模块名（必填） | 与子目录名一致。项目自有用项目模块名，框架用框架名 |
 | `description` | 一句话 | 简要描述 |
 | `status` | `已实现` / `计划中` / `已废弃` | 当前状态 |
 | `scope` | `前端` / `后端` / `全栈` | 适用范围 |
 | `source` | `项目自有` / `框架:{名称}` / `计划` | 知识来源 |
 | `import` | Maven GAV / npm 包路径 / 模块路径 | 导入坐标（复用此能力时需要的依赖声明） |
-| `module` | 模块名（可选） | 由子目录自动推导，如文档在 `springboot/` 下则为 `springboot` |
 
 **条件字段（sync 变更检测用）：**
 
@@ -233,8 +233,9 @@ API 说明、配置方式、依赖说明。
 docs/
 ├── capabilities/
 │   ├── index.md              # 自动生成，请勿手动编辑
-│   ├── workflow-engine.md    # 项目自有（根目录）
-│   └── springboot/           # 框架模块子目录
+│   ├── myapp/                # 项目自有模块
+│   │   └── workflow-engine.md  # name: myapp/workflow-engine
+│   └── springboot/           # 框架模块
 │       ├── cache.md          # name: springboot/cache
 │       └── ioc.md            # name: springboot/ioc
 └── conventions/

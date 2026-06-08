@@ -6,7 +6,7 @@
 
 | 名称 | 模块 | 描述 | 范围 | 来源 |
 |------|------|------|------|------|
-| [design-token](./design-token.md) |  | 前端样式必须使用 Design Token 变量，禁止硬编码颜色、间距、字号等值 | 前端 | 项目自有 |
+| [example/design-token](./example/design-token.md) | example | 前端样式必须使用 Design Token 变量，禁止硬编码颜色、间距、字号等值 | 前端 | 项目自有 |
 
 ---
 

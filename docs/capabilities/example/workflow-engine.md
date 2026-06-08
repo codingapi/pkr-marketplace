@@ -1,5 +1,6 @@
 ---
-name: workflow-engine
+name: example/workflow-engine
+module: example
 description: 通用工作流引擎，支持流程定义、节点编排、状态流转和审批流程
 status: 已实现
 scope: 后端

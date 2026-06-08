@@ -86,12 +86,12 @@ def collect_category_docs(category_dir):
         fm = parse_frontmatter(md_file)
         if fm:
             relpath = md_file.relative_to(category_dir)
-            # 提取 module：一级子目录名，根目录文件无 module
+            # 提取 module：必须位于子目录下，根目录文件跳过并警告
             parts = relpath.parts
-            if len(parts) > 1:
-                fm["_module"] = parts[0]
-            else:
-                fm["_module"] = fm.get("module", "")
+            if len(parts) < 2:
+                print(f"⚠️  跳过根目录文件（缺少 module 子目录）: {relpath}")
+                continue
+            fm["_module"] = parts[0]
             fm["_relpath"] = str(relpath)
             fm["_filename"] = md_file.name
             items.append(fm)
@@ -112,11 +112,12 @@ def generate_category_index(title, title_cn, items):
         lines.append("")
         return "\n".join(lines) + "\n"
 
-    # 按 module 分组：无 module 的归为"核心"
+    # 按 module 分组
     modules = {}
     for item in items:
-        mod = item.get("_module", "") or "核心"
-        modules.setdefault(mod, []).append(item)
+        mod = item.get("_module", "")
+        if mod:
+            modules.setdefault(mod, []).append(item)
 
     for status in ["已实现", "计划中", "已废弃"]:
         # 收集该状态下的所有模块和条目
@@ -143,7 +144,7 @@ def generate_category_index(title, title_cn, items):
                 source = item.get("source", "")
                 relpath = item.get("_relpath", "")
                 link = f"[{name}](./{relpath})" if relpath else name
-                mod_label = "" if mod == "核心" else mod
+                mod_label = mod
                 if len(desc) > 80:
                     desc = desc[:77] + "..."
                 lines.append(f"| {link} | {mod_label} | {desc} | {scope} | {source} |")

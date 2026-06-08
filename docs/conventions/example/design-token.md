@@ -1,5 +1,6 @@
 ---
-name: design-token
+name: example/design-token
+module: example
 description: 前端样式必须使用 Design Token 变量，禁止硬编码颜色、间距、字号等值
 status: 已实现
 scope: 前端

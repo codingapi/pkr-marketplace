@@ -4,7 +4,7 @@ description: >
   This skill should be used when the user asks to "add capability",
   "register convention", "add PKR doc", "manual register",
   "pkr add", "plan capability", or mentions manually adding knowledge registry entries.
-argument-hint: "[plan] <name> <description>"
+argument-hint: "[plan] [name] <description>"
 allowed-tools: [Read, Write, Edit, Bash, AskUserQuestion, Glob, Grep, mcp__codegraph__*]
 disable-model-invocation: true
 ---
@@ -69,11 +69,28 @@ YAML Front Matter 字段：
 
 | 命令格式 | 模式 | 说明 |
 |----------|------|------|
-| `/pkr-add <name> <description>` | A — 代码扫描注册 | 从代码或框架中查找能力，生成已实现文档 |
-| `/pkr-add plan <name> <description>` | B — 计划注册 | 不扫描代码，直接生成计划中文档 |
+| `/pkr-add <name> <description>` | A — 代码扫描注册（指定名称） | 从代码或框架中查找能力，生成已实现文档 |
+| `/pkr-add <description>` | A — 代码扫描注册（自动生成名称） | 扫描后从代码中提取名称 |
+| `/pkr-add plan <name> <description>` | B — 计划注册（指定名称） | 不扫描代码，直接生成计划中文档 |
+| `/pkr-add plan <description>` | B — 计划注册（自动生成名称） | 从描述中提取名称 |
 
 - 第一个参数为 `plan` → 模式 B
 - 其他 → 模式 A
+
+### 自动生成名称规则
+
+当用户未指定 `name` 时，按以下优先级生成英文短横线格式名称：
+
+**模式 A（代码扫描）**：
+1. 从扫描到的主类/主文件提取：`RetryEngine` → `retry-engine`，`EventBus` → `event-bus`
+2. 若扫描到多个候选，取最具代表性的类名
+3. 生成后展示给用户确认，用户可修改
+
+**模式 B（计划注册）**：
+1. 从 description 中提取核心名词短语，转为英文短横线格式
+2. 例："基于 Drools 的业务规则引擎" → `rule-engine`
+3. 例："引入 RocketMQ 作为消息中间件" → `message-queue`
+4. 生成后展示给用户确认，用户可修改
 
 ---
 
@@ -92,17 +109,21 @@ YAML Front Matter 字段：
 ### 用法
 
 ```
+# 指定名称
 /pkr-add retry-engine "项目自有的重试引擎，支持指数退避和最大重试次数配置"
 /pkr-add spring-cache "Spring Cache 的声明式缓存能力"
-/pkr-add event-bus "项目的事件总线，基于 Guava EventBus 封装"
+
+# 自动生成名称（从代码中提取）
+/pkr-add "项目自有的重试引擎，支持指数退避和最大重试次数配置"
+/pkr-add "项目的事件总线，基于 Guava EventBus 封装"
 ```
 
-- `<name>`（必填）：英文短横线格式名称
+- `[name]`（可选）：英文短横线格式名称，未提供时从扫描到的代码自动提取
 - `<description>`（必填）：描述能力的核心功能，指导扫描方向
 
 ### 工作流程
 
-1. **解析参数**：提取 `name` 和 `description`
+1. **解析参数**：提取 `name`（可选）和 `description`
 2. **判断来源类型**：
    - 对照 `${CLAUDE_PLUGIN_ROOT}/shared/references/framework-capabilities.md` 检查是否为已知三方框架
    - 若匹配到框架 → `source = 框架:{框架名}`
@@ -128,12 +149,14 @@ YAML Front Matter 字段：
    - 记录 `framework_version`
 
 4. **用 AskUserQuestion 确认信息**：
+   - 若未提供 name：展示自动生成的名称，用户可修改
    - 展示扫描结果摘要
    - 确认类型：Capability / Convention
    - 确认 scope：前端 / 后端 / 全栈
    - 用户可修正 source 判断（如项目自有 vs 框架）
 
 5. **生成文档**：
+   - `name`：用户提供或从代码自动提取的名称
    - 读取对应模板
    - 用扫描结果填充"如何使用"和"使用实例"
    - 写入 `docs/capabilities/` 或 `docs/conventions/`
@@ -155,31 +178,37 @@ YAML Front Matter 字段：
 ### 用法
 
 ```
+# 指定名称
 /pkr-add plan rule-engine "基于 Drools 的业务规则引擎，支持规则定义、条件匹配和动作执行"
-/pkr-add plan message-queue "引入 RocketMQ 作为消息中间件，支持异步解耦和削峰填谷"
 /pkr-add plan design-token-v2 "升级版 Design Token 体系，支持暗黑主题和多品牌切换"
+
+# 自动生成名称（从描述中提取）
+/pkr-add plan "引入 RocketMQ 作为消息中间件，支持异步解耦和削峰填谷"
+/pkr-add plan "基于 Drools 的业务规则引擎"
 ```
 
 - `plan`（必填）：路由关键词，标识为计划注册模式
-- `<name>`（必填）：英文短横线格式名称
+- `[name]`（可选）：英文短横线格式名称，未提供时从描述中自动提取
 - `<description>`（必填）：描述计划中的能力/规范的核心功能和预期设计
 
 ### 工作流程
 
-1. **解析参数**：提取 `name` 和 `description`
-2. **用 AskUserQuestion 收集补充信息**：
+1. **解析参数**：提取 `name`（可选）和 `description`
+2. **若未提供 name**：从 description 中提取核心名词短语，转为英文短横线格式（如"业务规则引擎" → `rule-engine`），展示给用户确认
+3. **用 AskUserQuestion 收集补充信息**：
    - 确认类型：Capability / Convention
    - 确认 scope：前端 / 后端 / 全栈
    - 预期实现方式或技术选型（可选）
    - 预计依赖或前置条件（可选）
-3. **生成文档**：
+4. **生成文档**：
+   - `name`：用户提供或自动生成的名称
    - `status: 计划中`
    - `source: 计划`
    - 无条件字段（无 `last_commit`、`code_files`、`framework_version`）
    - "解决什么问题"：基于 description 展开
    - "如何使用"：描述预期的 API 设计和使用方式（标注为"预期设计，待实现"）
    - "使用实例"：描述预期的使用场景和伪代码示例（标注为"预期示例，待实现"）
-4. **写入文档**：写入 `docs/capabilities/` 或 `docs/conventions/`
+5. **写入文档**：写入 `docs/capabilities/` 或 `docs/conventions/`
 
 ---
 

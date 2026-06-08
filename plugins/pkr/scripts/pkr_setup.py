@@ -48,8 +48,8 @@ PKR_CONTENT = """\
 | `/pkr-init` | 首次扫描项目，发现候选能力和规范 |
 | `/pkr-sync` | 全量同步，对比代码变更 |
 | `/pkr-update <name> [desc]` | 单项更新，可带描述指导更新 |
-| `/pkr-add <name> <desc>` | 从代码/框架扫描注册能力 |
-| `/pkr-add plan <name> <desc>` | 注册计划中的能力 |
+| `/pkr-add [name] <desc>` | 从代码/框架扫描注册（名称可省略） |
+| `/pkr-add plan [name] <desc>` | 注册计划中的能力（名称可省略） |
 <!-- PKR-END -->
 """
 

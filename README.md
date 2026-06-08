@@ -84,11 +84,11 @@ Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和�
 # 定期全量同步（检查所有文档与代码的一致性）
 /pkr-sync
 
-# 从代码中扫描注册遗漏的能力
-/pkr-add retry-engine "项目自有的重试引擎，支持指数退避"
+# 从代码中扫描注册（名称自动从代码提取）
+/pkr-add "项目自有的重试引擎，支持指数退避"
 
-# 注册计划中的能力（不扫描代码）
-/pkr-add plan rule-engine "基于 Drools 的业务规则引擎"
+# 注册计划中的能力（名称从描述提取）
+/pkr-add plan "基于 Drools 的业务规则引擎"
 ```
 
 ## 命令详解
@@ -140,40 +140,41 @@ Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和�
 
 适用于修改了某个能力后立即更新对应文档，比全量 sync 更快。
 
-### `/pkr-add <name> <description>` — 从代码注册
+### `/pkr-add [name] <description>` — 从代码注册
 
 从项目代码或三方框架中扫描查找能力，生成 `已实现` 文档：
 
 ```bash
-# 注册项目自有能力
+# 指定名称注册
 /pkr-add retry-engine "项目自有的重试引擎，支持指数退避和最大重试次数"
 
-# 注册三方框架能力
-/pkr-add spring-cache "Spring Cache 的声明式缓存能力"
-
-# 注册遗漏的规范
-/pkr-add event-bus "项目的事件总线，基于 Guava EventBus 封装"
+# 自动生成名称（从扫描到的代码类名提取，如 RetryEngine → retry-engine）
+/pkr-add "项目自有的重试引擎，支持指数退避"
+/pkr-add "项目的事件总线，基于 Guava EventBus 封装"
 ```
 
 **参数说明**：
-- `<name>`（必填）：英文短横线格式名称
+- `[name]`（可选）：英文短横线格式名称，未提供时从代码自动提取
 - `<description>`（必填）：描述能力功能，指导扫描方向
 
 Claude 会自动判断来源是项目自有还是三方框架，扫描代码后展示结果供确认。
 
-### `/pkr-add plan <name> <description>` — 计划注册
+### `/pkr-add plan [name] <description>` — 计划注册
 
 不扫描代码，基于描述生成 `计划中` 文档：
 
 ```bash
+# 指定名称
 /pkr-add plan rule-engine "基于 Drools 的业务规则引擎，支持规则定义和条件匹配"
-/pkr-add plan message-queue "引入 RocketMQ 作为消息中间件，支持异步解耦"
-/pkr-add plan design-token-v2 "升级版 Design Token 体系，支持暗黑主题"
+
+# 自动生成名称（从描述提取核心名词，如"消息中间件" → message-queue）
+/pkr-add plan "引入 RocketMQ 作为消息中间件，支持异步解耦"
+/pkr-add plan "升级版 Design Token 体系，支持暗黑主题"
 ```
 
 **参数说明**：
 - `plan`（必填）：路由关键词，标识为计划注册
-- `<name>`（必填）：英文短横线格式名称
+- `[name]`（可选）：英文短横线格式名称，未提供时从描述自动提取
 - `<description>`（必填）：描述计划中能力的核心功能和预期设计
 
 ## 文档格式
@@ -273,8 +274,8 @@ docs/
 │  编码后                                                 │
 │  ↓                                                      │
 │  /pkr-update <name> [desc] → 更新能力文档               │
-│  /pkr-add <name> <desc> → 从代码注册新能力             │
-│  /pkr-add plan <name> <desc> → 注册计划中能力          │
+│  /pkr-add [name] <desc> → 从代码注册（名称可自动提取）  │
+│  /pkr-add plan [name] <desc> → 计划注册（名称可自动生成）│
 └─────────────────────────────────────────────────────────┘
 ```
 

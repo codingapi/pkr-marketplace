@@ -78,6 +78,9 @@ Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和�
 # 修改了某个能力后，立即更新对应文档
 /pkr-scan update workflow-engine
 
+# 带描述信息，指导更新重点
+/pkr-scan update workflow-engine "新增了重试机制"
+
 # 定期全量同步（检查所有文档与代码的一致性）
 /pkr-scan sync
 
@@ -110,14 +113,27 @@ Claude 会扫描项目代码、依赖和规划文档，列出候选的能力和�
 - 消失的 → 标记为 `已废弃`（不删除）
 - 变更的 → 幂等合并（事实以代码为准，人工编辑保留）
 
-### `/pkr-scan update <name>` — 单项更新
+### `/pkr-scan update <name> [description]` — 单项更新
 
 针对单个已注册的能力或规范文档，重新扫描代码并更新：
 
 ```bash
+# 仅更新文档
 /pkr-scan update workflow-engine
-/pkr-scan update design-token
+
+# 带描述信息，指导更新重点
+/pkr-scan update workflow-engine "新增了重试机制和超时配置"
+/pkr-scan update design-token "添加了暗黑主题支持"
 ```
+
+**参数说明**：
+- `<name>`（必填）：文档名称（对应 frontmatter 中的 `name` 字段）
+- `[description]`（可选）：变更描述，用于指导 Claude 重点关注哪些变化
+
+**description 的作用**：
+- 帮助 Claude 聚焦于你关心的变更点（如新增 API、配置项）
+- 在变更记录中作为变更摘要
+- 确保文档内容体现了描述中提到的功能
 
 适用于修改了某个能力后立即更新对应文档，比全量 sync 更快。
 
@@ -228,7 +244,7 @@ docs/
 │  ↓                                                      │
 │  编码后                                                 │
 │  ↓                                                      │
-│  /pkr-scan update <name> → 更新变更的能力文档           │
+│  /pkr-scan update <name> [desc] → 更新能力文档          │
 │  /pkr-scan add → 注册新产生的能力                       │
 └─────────────────────────────────────────────────────────┘
 ```

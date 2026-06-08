@@ -5,7 +5,7 @@ description: >
   "build PKR docs", "discover capabilities", "discover conventions",
   "update PKR", "add capability", "register convention",
   "pkr", or mentions project knowledge registry.
-argument-hint: "[init|sync|update <name>|add]"
+argument-hint: "[init|sync|update <name> [description]|add]"
 allowed-tools: [Read, Write, Edit, Bash, AskUserQuestion, Glob, Grep, mcp__codegraph__*]
 disable-model-invocation: true
 ---
@@ -249,7 +249,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
 
 ---
 
-## 模式 C — `update <name>`（单项更新）
+## 模式 C — `update <name> [description]`（单项更新）
 
 针对单个已注册的能力或规范文档，重新扫描代码并更新。
 
@@ -257,30 +257,44 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/pkr_setup.py"
 
 ```
 /pkr-scan update workflow-engine
-/pkr-scan update design-token
+/pkr-scan update workflow-engine "新增了重试机制和超时配置"
+/pkr-scan update design-token "添加了暗黑主题支持"
 ```
 
-`<name>` 对应文档 frontmatter 中的 `name` 字段值。
+- `<name>`（必填）：对应文档 frontmatter 中的 `name` 字段值
+- `[description]`（可选）：用户提供的更新提示，描述本次变更的重点内容
 
 ### 工作流
 
 1. **定位文档**：在 `docs/capabilities/` 和 `docs/conventions/` 中查找 `{name}.md`
    - 若找不到 → 提示用户该文档不存在，建议用 `add` 新建
-2. **读取文档**：解析 frontmatter，获取 `source` 和 `status`
+2. **读取文档**：解析 frontmatter，获取 `source`、`status` 和条件字段
 3. **按 source 定向扫描**：
-   - **source=项目自有** → 在代码中定位对应的类/文件，分析当前 API
-   - **source=框架:xxx** → 检查依赖是否仍存在，查阅框架文档
+   - **source=项目自有** → 在代码中定位 `code_files` 中列出的文件，分析当前 API
+     - 若提供了 `description`：重点关注描述中提到的功能点（如新增的 API、配置项）
+   - **source=框架:xxx** → 检查依赖是否仍存在，对比 `framework_version`
+     - 若提供了 `description`：结合描述更新框架使用方式
    - **source=计划** → 检查代码中是否已实现该能力
+     - 若已实现：提示升级为 `已实现`，并补充实现细节
 4. **幂等合并更新**（同模式 B 步骤 4）
-5. **追加变更记录**
+   - 若提供了 `description`：确保文档内容体现了描述中提到的变更
+5. **更新 frontmatter 条件字段**：
+   - `source=项目自有` → 更新 `last_commit` 为当前 git hash
+   - `source=框架:xxx` → 更新 `framework_version` 为当前版本
+6. **追加变更记录**：
+   - 格式：`> 🔄 最后更新: {日期} — {变更摘要}`
+   - 若提供了 `description`：使用 description 作为变更摘要
+   - 若未提供：根据实际扫描结果生成摘要
 
 ### 与 sync 的区别
 
-| | `sync` | `update <name>` |
+| | `sync` | `update <name> [description]` |
 |---|---|---|
 | 范围 | 全部文档 | 单个文档 |
+| 变更检测 | 自动（git hash / 版本号） | 自动 + 可选手动提示 |
 | 速度 | 慢（全量扫描） | 快（定向分析） |
 | 适用场景 | 定期全量同步 | 改了某个能力后立即更新 |
+| description 参数 | 不支持 | 支持（指导更新重点） |
 
 ---
 

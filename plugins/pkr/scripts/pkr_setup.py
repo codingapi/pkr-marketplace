@@ -47,7 +47,7 @@ PKR_CONTENT = """\
 |------|------|
 | `/pkr-scan init` | 首次扫描项目，发现候选能力和规范 |
 | `/pkr-scan sync` | 全量同步，对比代码变更 |
-| `/pkr-scan update <name>` | 单项更新指定能力或规范 |
+| `/pkr-scan update <name> [desc]` | 单项更新，可带描述指导更新 |
 | `/pkr-scan add` | 手动注册新的能力或规范 |
 <!-- PKR-END -->
 """

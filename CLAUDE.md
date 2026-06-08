@@ -7,7 +7,7 @@
 ## 项目结构
 
 ```
-my-marketplace/
+pkr-marketplace/
 ├── .claude-plugin/marketplace.json    # 市场注册文件
 ├── plugins/
 │   └── pkr/                           # PKR 插件

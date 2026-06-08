@@ -18,14 +18,13 @@
 - Claude Code CLI 已安装并登录
 - Git 已初始化（`git init`）
 - Python 3（用于索引重建脚本）
-- Bash（用于初始化脚本）
 
 ## 快速开始
 
 ### 1. 安装插件
 
 ```bash
-/plugin install <marketplace-url> pkr
+/plugin install git@github.com:codingapi/pkr-marketplace.git pkr
 ```
 
 ### 2. 初始化项目

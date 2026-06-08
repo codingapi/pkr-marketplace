@@ -3,15 +3,15 @@ name: pkr-add
 description: >
   This skill should be used when the user asks to "add capability",
   "register convention", "add PKR doc", "manual register",
-  "pkr add", or mentions manually adding knowledge registry entries.
-argument-hint: ""
+  "pkr add", "plan capability", or mentions manually adding knowledge registry entries.
+argument-hint: "[plan] <name> <description>"
 allowed-tools: [Read, Write, Edit, Bash, AskUserQuestion, Glob, Grep, mcp__codegraph__*]
 disable-model-invocation: true
 ---
 
 # PKR Add — 手动注册项目知识
 
-通用的手动入口，通过交互式问答收集信息，按模板生成 PKR 文档。用于补漏和扩展。
+手动注册 Capability 或 Convention 文档。支持两种模式：从代码/框架扫描注册，或注册为计划中能力。
 
 ## 文档存储位置
 
@@ -63,38 +63,131 @@ YAML Front Matter 字段：
 
 ---
 
-## 典型场景
+## 命令路由
 
-| 场景 | status | source |
-|------|--------|--------|
-| 扫描没发现但项目中确实存在的能力 | 已实现 | 项目自有 |
-| 计划开发但代码尚未实现的能力 | 计划中 | 计划 |
-| 速查表中未收录的三方框架能力 | 已实现 | 框架:xxx |
-| 扫描遗漏的规范/约定 | 已实现 | 项目自有 |
+根据第一个参数选择模式：
 
-## 工作流程
+| 命令格式 | 模式 | 说明 |
+|----------|------|------|
+| `/pkr-add <name> <description>` | A — 代码扫描注册 | 从代码或框架中查找能力，生成已实现文档 |
+| `/pkr-add plan <name> <description>` | B — 计划注册 | 不扫描代码，直接生成计划中文档 |
 
-1. 用户提供名称或简要描述
-2. 用 AskUserQuestion 交互收集：
-   - **名称**（英文短横线格式）
-   - **描述**（一句话）
-   - **类型**：Capability / Convention
-   - **scope**：前端 / 后端 / 全栈
-   - **source**：项目自有 / 框架 / 计划
-   - **status**：已实现 / 计划中 — **用户自选，不预设**
-3. 若 status=已实现：
-   - 询问用户代码位置（类名/文件路径）
-   - 分析源码，自动填充"如何使用"和"使用实例"
-4. 若 status=计划中：
-   - 收集预期设计和规划信息
-5. 按模板生成文档，写入对应目录
+- 第一个参数为 `plan` → 模式 B
+- 其他 → 模式 A
+
+---
+
+## 模式 A — 代码扫描注册
+
+从项目代码或三方框架中扫描查找能力，生成 `status: 已实现` 的文档。
+
+### 典型场景
+
+| 场景 | source |
+|------|--------|
+| 扫描没发现但项目中确实存在的能力 | 项目自有 |
+| 速查表中未收录的三方框架能力 | 框架:xxx |
+| 扫描遗漏的规范/约定 | 项目自有 |
+
+### 用法
+
+```
+/pkr-add retry-engine "项目自有的重试引擎，支持指数退避和最大重试次数配置"
+/pkr-add spring-cache "Spring Cache 的声明式缓存能力"
+/pkr-add event-bus "项目的事件总线，基于 Guava EventBus 封装"
+```
+
+- `<name>`（必填）：英文短横线格式名称
+- `<description>`（必填）：描述能力的核心功能，指导扫描方向
+
+### 工作流程
+
+1. **解析参数**：提取 `name` 和 `description`
+2. **判断来源类型**：
+   - 对照 `${CLAUDE_PLUGIN_ROOT}/shared/references/framework-capabilities.md` 检查是否为已知三方框架
+   - 若匹配到框架 → `source = 框架:{框架名}`
+   - 若未匹配 → `source = 项目自有`
+3. **按 source 定向扫描**：
+
+   **source=项目自有：**
+   - 根据 `name` 和 `description` 在代码中搜索相关类/文件
+   - 搜索策略：按名称模式（`*{Name}*`、`*{name}*`）搜索，结合 description 中的关键词
+   - 分析找到的源码，提取：
+     - 公开 API（方法签名、参数、返回值）
+     - 配置方式（构造函数、注解、配置文件）
+     - 依赖关系
+   - 记录 `code_files`（关联的源码文件列表）
+   - 记录 `last_commit`：
+     ```bash
+     git log -1 --format=%h -- <code_files>
+     ```
+
+   **source=框架:xxx：**
+   - 从依赖声明文件（pom.xml / package.json 等）读取版本号
+   - 根据 description 和框架文档，整理该框架提供的核心能力
+   - 记录 `framework_version`
+
+4. **用 AskUserQuestion 确认信息**：
+   - 展示扫描结果摘要
+   - 确认类型：Capability / Convention
+   - 确认 scope：前端 / 后端 / 全栈
+   - 用户可修正 source 判断（如项目自有 vs 框架）
+
+5. **生成文档**：
+   - 读取对应模板
+   - 用扫描结果填充"如何使用"和"使用实例"
+   - 写入 `docs/capabilities/` 或 `docs/conventions/`
+
+---
+
+## 模式 B — 计划注册
+
+不扫描代码，基于用户描述生成 `status: 计划中` 的文档。
+
+### 典型场景
+
+| 场景 | source |
+|------|--------|
+| 计划开发但代码尚未实现的能力 | 计划 |
+| PRD/ROADMAP 中规划的功能 | 计划 |
+| 团队讨论后决定要引入的框架能力 | 计划 |
+
+### 用法
+
+```
+/pkr-add plan rule-engine "基于 Drools 的业务规则引擎，支持规则定义、条件匹配和动作执行"
+/pkr-add plan message-queue "引入 RocketMQ 作为消息中间件，支持异步解耦和削峰填谷"
+/pkr-add plan design-token-v2 "升级版 Design Token 体系，支持暗黑主题和多品牌切换"
+```
+
+- `plan`（必填）：路由关键词，标识为计划注册模式
+- `<name>`（必填）：英文短横线格式名称
+- `<description>`（必填）：描述计划中的能力/规范的核心功能和预期设计
+
+### 工作流程
+
+1. **解析参数**：提取 `name` 和 `description`
+2. **用 AskUserQuestion 收集补充信息**：
+   - 确认类型：Capability / Convention
+   - 确认 scope：前端 / 后端 / 全栈
+   - 预期实现方式或技术选型（可选）
+   - 预计依赖或前置条件（可选）
+3. **生成文档**：
+   - `status: 计划中`
+   - `source: 计划`
+   - 无条件字段（无 `last_commit`、`code_files`、`framework_version`）
+   - "解决什么问题"：基于 description 展开
+   - "如何使用"：描述预期的 API 设计和使用方式（标注为"预期设计，待实现"）
+   - "使用实例"：描述预期的使用场景和伪代码示例（标注为"预期示例，待实现"）
+4. **写入文档**：写入 `docs/capabilities/` 或 `docs/conventions/`
 
 ---
 
 ## 反模式（禁止行为）
 
-1. **禁止跳过用户确认**：必须经用户确认后才生成文档
-2. **禁止凭空推断**：文档内容必须基于代码事实或用户提供的信息，不得编造 API
+1. **禁止跳过用户确认**：模式 A 的扫描结果和类型/scope 必须经用户确认
+2. **禁止凭空推断**：模式 A 的文档内容必须基于代码事实，不得编造 API
 3. **禁止删除文档**：只标记 `已废弃`，不删除文件
-4. **禁止覆盖人工编辑**：必须保留无法从代码推导的内容
+4. **禁止覆盖人工编辑**：更新已有文档时必须保留无法从代码推导的内容
 5. **禁止全量加载**：不要一次读取所有源码文件，按需读取
+6. **禁止模式 B 扫描代码**：计划模式不扫描代码，内容完全基于用户描述

@@ -32,5 +32,6 @@ pkr-marketplace/
 1. `/pkr-init` — 确认能扫描出候选并生成文档
 2. `/pkr-sync` — 确认全量同步能检测代码变更
 3. `/pkr-update <name>` — 确认单项更新正常
-4. `/pkr-add` — 确认手动注册正常
+4. `/pkr-add <name> <desc>` — 确认从代码注册正常
+5. `/pkr-add plan <name> <desc>` — 确认计划注册正常
 5. 写入 `docs/capabilities/*.md` 后确认索引自动重建

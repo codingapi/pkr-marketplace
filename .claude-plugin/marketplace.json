@@ -1,0 +1,17 @@
+{
+  "name": "pkr-marketplace",
+  "description": "项目知识注册中心（PKR）插件市场，提供 Capability 和 Convention 的扫描、注册和管理能力",
+  "version": "0.0.1",
+  "owner": {
+    "name": "lorne",
+    "email": "1024lorne@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "pkr",
+      "description": "项目知识注册中心：扫描代码发现能力和规范，支持首次构建、增量更新和手动注册",
+      "source": "./plugins/pkr",
+      "version": "0.0.1"
+    }
+  ]
+}

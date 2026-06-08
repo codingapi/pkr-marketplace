@@ -1,0 +1,32 @@
+{
+  "description": "PKR 文档写入后自动重建索引",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Write(*docs/capabilities*)",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_pkr_index.py\""
+          },
+          {
+            "type": "command",
+            "if": "Edit(*docs/capabilities*)",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_pkr_index.py\""
+          },
+          {
+            "type": "command",
+            "if": "Write(*docs/conventions*)",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_pkr_index.py\""
+          },
+          {
+            "type": "command",
+            "if": "Edit(*docs/conventions*)",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_pkr_index.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

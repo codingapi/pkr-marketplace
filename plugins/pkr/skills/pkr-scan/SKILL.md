@@ -5,8 +5,9 @@ description: >
   "build PKR docs", "discover capabilities", "discover conventions",
   "update PKR", "add capability", "register convention",
   "pkr", or mentions project knowledge registry.
-argument-hint: "[init|update|add]"
+argument-hint: "[init|sync|update <name>|add]"
 allowed-tools: [Read, Write, Edit, Bash, AskUserQuestion, Glob, Grep]
+disable-model-invocation: true
 ---
 
 # PKR Scan — 项目知识注册中心扫描工具
@@ -38,13 +39,24 @@ YAML Front Matter 字段：
 
 正文三个必含章节：**解决什么问题** / **如何使用** / **使用实例**
 
+## 脚本使用约定
+
+- **引用方式**：SKILL.md 中通过相对 markdown link 引用脚本
+  [./scripts/rebuild_pkr_index.py](./scripts/rebuild_pkr_index.py)
+- **执行方式**：通过 Bash 直接执行，使用 `${CLAUDE_PLUGIN_ROOT}` 定位脚本绝对路径
+  ```bash
+  python3 "${CLAUDE_PLUGIN_ROOT}/skills/pkr-scan/scripts/rebuild_pkr_index.py"
+  ```
+- **禁止 Read+stdin**：不需要先 Read 脚本源码再管道执行，直接 python3 调用即可
+
 ## 命令模式
 
 根据用户传入的参数选择工作流：
 - `init` 或无参数且 `docs/capabilities/` 为空 → 模式 A
-- `update` → 模式 B
-- `add` → 模式 C
-- 无参数且已有文档 → 询问用户选择 init 还是 update
+- `sync` → 模式 B（全量同步）
+- `update <name>` → 模式 C（单项更新）
+- `add` → 模式 D
+- 无参数且已有文档 → 询问用户选择 init 还是 sync
 
 ---
 
@@ -148,11 +160,13 @@ YAML Front Matter 字段：
 
 ---
 
-## 模式 B — `update`（增量更新）
+## 模式 B — `sync`（全量同步）
+
+扫描所有现有文档，与代码/依赖现状对比，批量更新。
 
 ### 步骤 1：加载现有文档
 
-读取 `docs/capabilities/` 和 `docs/conventions/` 下所有 `.md` 文件，解析 frontmatter。
+读取 `docs/capabilities/` 和 `docs/conventions/` 下所有 `.md` 文件（排除 index.md），解析 frontmatter。
 
 ### 步骤 2：扫描代码/依赖现状
 
@@ -192,7 +206,7 @@ YAML Front Matter 字段：
 
 ### 步骤 5：展示变更摘要
 
-列出本次 update 的变更：
+列出本次 sync 的变更：
 - 新增 N 个文档
 - 更新 N 个文档
 - 标记 N 个文档为已废弃
@@ -200,7 +214,42 @@ YAML Front Matter 字段：
 
 ---
 
-## 模式 C — `add`（手动注册/补漏）
+## 模式 C — `update <name>`（单项更新）
+
+针对单个已注册的能力或规范文档，重新扫描代码并更新。
+
+### 用法
+
+```
+/pkr-scan update workflow-engine
+/pkr-scan update design-token
+```
+
+`<name>` 对应文档 frontmatter 中的 `name` 字段值。
+
+### 工作流
+
+1. **定位文档**：在 `docs/capabilities/` 和 `docs/conventions/` 中查找 `{name}.md`
+   - 若找不到 → 提示用户该文档不存在，建议用 `add` 新建
+2. **读取文档**：解析 frontmatter，获取 `source` 和 `status`
+3. **按 source 定向扫描**：
+   - **source=项目自有** → 在代码中定位对应的类/文件，分析当前 API
+   - **source=框架:xxx** → 检查依赖是否仍存在，查阅框架文档
+   - **source=计划** → 检查代码中是否已实现该能力
+4. **幂等合并更新**（同模式 B 步骤 4）
+5. **追加变更记录**
+
+### 与 sync 的区别
+
+| | `sync` | `update <name>` |
+|---|---|---|
+| 范围 | 全部文档 | 单个文档 |
+| 速度 | 慢（全量扫描） | 快（定向分析） |
+| 适用场景 | 定期全量同步 | 改了某个能力后立即更新 |
+
+---
+
+## 模式 D — `add`（手动注册/补漏）
 
 扫描不可能覆盖所有情况，此模式是通用的手动入口。
 
@@ -236,6 +285,6 @@ YAML Front Matter 字段：
 
 1. **禁止跳过用户确认**：init 模式下，候选清单必须经用户确认后才生成文档
 2. **禁止凭空推断**：文档内容必须基于代码事实或用户提供的信息，不得编造 API
-3. **禁止删除文档**：update 时只标记 `已废弃`，不删除文件
-4. **禁止覆盖人工编辑**：update 时必须保留无法从代码推导的内容
+3. **禁止删除文档**：sync/update 时只标记 `已废弃`，不删除文件
+4. **禁止覆盖人工编辑**：sync/update 时必须保留无法从代码推导的内容
 5. **禁止全量加载**：不要一次读取所有源码文件，按需读取

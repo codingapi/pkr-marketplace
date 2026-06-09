@@ -27,6 +27,12 @@ pkr-marketplace/
 └── docs/                              # 示例文档（开发参考用）
 ```
 
+## 项目性质
+
+本项目是 **Skills 项目**（由 `SKILL.md` 提示词 + Python 脚本组成），不涉及业务代码分析。
+
+**因此不需要使用 CodeGraph 分析代码。** 开发时直接阅读 `SKILL.md` 和 `plugins/pkr/scripts/*.py` 即可。
+
 ## 开发时测试
 
 在目标项目中安装插件后，通过以下方式验证：
